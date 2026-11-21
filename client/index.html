@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>混乱与蠕动 · 作战大厅</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/client/style.css">
+</head>
+<body class="lobby-view">
+  <div class="ambient" aria-hidden="true"></div>
+  <canvas id="weather-fx" aria-hidden="true"></canvas>
+  <canvas id="snow-canvas" aria-hidden="true"></canvas>
+  <script src="/client/sprite.js"></script>
+  <div class="connection-strip" id="connection-strip" hidden>
+    <span id="connection-text">正在连接服务器…</span>
+  </div>
+
+  <header class="site-top astro-top" id="site-top">
+    <div class="site-mark astro-brand">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg></span>
+      <span class="brand-text"><b>混乱与蠕动</b><span>联机 / 单机 / 剧情 · 回合制战棋</span></span>
+    </div>
+    <nav class="site-nav astro-nav" aria-label="站点功能">
+      <a class="nav-ico" href="/local?campaign=1" title="战役关卡 · 剧情模式"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3"/><path d="M6 4h11l-2.4 3.8L17 12H6"/><path d="M4 21h4"/></svg><span>剧情</span></a>
+      <a class="nav-ico" href="/codex" target="_blank" rel="noopener" title="战地图鉴"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c2.8-1 5.4-1 8 0v13c-2.6-1-5.2-1-8 0z"/><path d="M20 5.5c-2.8-1-5.4-1-8 0v13c2.6-1 5.2-1 8 0z"/></svg><span>图鉴</span></a>
+      <a class="nav-ico" href="/rules" target="_blank" rel="noopener" title="游玩规则"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h8l3 3v14H7z"/><path d="M15 3.5v3h3"/><path d="M10 11h6M10 14.5h6"/></svg><span>规则</span></a>
+      <a class="nav-ico" href="/copyright" target="_blank" rel="noopener" title="版权信息"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 10.8v5"/><circle cx="12" cy="8.1" r=".9" fill="currentColor" stroke="none"/></svg><span>版权</span></a>
+      <button type="button" class="nav-ico music-toggle" aria-pressed="true" title="关闭背景音乐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v11"/><ellipse cx="6.8" cy="18" rx="2.6" ry="2"/><ellipse cx="16.8" cy="15" rx="2.6" ry="2"/></svg><span class="music-label">音乐</span></button>
+      <button type="button" class="nav-ico auth-status-btn" id="auth-status-btn" title="登录 / 绑定账号"><span>登录</span></button>
+    </nav>
+  </header>
+
+  <!-- 大厅 -->
+  <main class="lobby astro-lobby" id="lobby">
+    <canvas id="lobby-stars" class="lobby-stars" aria-hidden="true"></canvas>
+    <section class="lobby-card">
+      <section class="mode-details" aria-live="polite">
+        <div class="mode-eyebrow"><i aria-hidden="true"></i><span id="mode-eyebrow">阵式 壹 · CLASSIC</span></div>
+        <h1 id="mode-title">经典模式</h1>
+        <div class="mode-en" id="mode-en">CLASSIC</div>
+        <p class="mode-brief" id="mode-brief">方寸棋盘上的正面对抗。没有额外规则，只有站位、点数与判断。</p>
+        <ul class="mode-points" id="mode-points">
+          <li>55 格标准战场</li><li>双方交替行动</li><li>全灭或第 20 回合判定</li>
+        </ul>
+        <p class="mode-quote" id="mode-quote">先学会走路，再谈奇袭。</p>
+        <p class="mode-version">v2.1.0 &nbsp;/&nbsp; 规则 v5.6</p>
+      </section>
+
+      <section class="chart-zone" aria-label="十阵星盘">
+        <div class="wheel" id="wheel">
+          <span class="st-ring r1"></span><span class="st-ring r2"></span><span class="st-ring r3"></span><span class="st-ring r4"></span>
+          <span class="st-ticks"></span><span class="st-ticks inner"></span>
+          <svg class="st-constellation" viewBox="0 0 100 100" aria-hidden="true">
+            <polygon class="web" points="50,10 73.5,17.6 88,37.6 88,62.4 73.5,82.4 50,90 26.5,82.4 12,62.4 12,37.6 26.5,17.6"/>
+            <g class="spokes">
+              <path d="M50 50L50 10M50 50L73.5 17.6M50 50L88 37.6M50 50L88 62.4M50 50L73.5 82.4M50 50L50 90M50 50L26.5 82.4M50 50L12 62.4M50 50L12 37.6M50 50L26.5 17.6"/>
+            </g>
+          </svg>
+          <span class="st-needle" id="needle"></span>
+          <div class="st-orb">
+            <span class="halo"></span>
+            <span class="orb-icon" id="orb-icon"><svg viewBox="0 0 24 24"><use href="#m-classic"></use></svg></span>
+            <span class="orb-no" id="orb-no">壹 / 01</span>
+          </div>
+
+          <div class="mode-cards" id="mode-cards" role="radiogroup" aria-label="战场模式">
+            <button type="button" class="mode-card" data-mode="classic" data-name="经典模式" data-en="CLASSIC" data-no="壹" data-index="01" data-accent="#c79a55" data-brief="方寸棋盘上的正面对抗。没有额外规则，只有站位、点数与判断。" data-points="55 格标准战场|双方交替行动|全灭或第 20 回合判定" data-quote="先学会走路，再谈奇袭。" style="--a:0deg;--neg:0deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-classic"></use></svg></span><span class="mode-name">经典</span><span class="mode-tag">标准对决</span></button>
+            <button type="button" class="mode-card" data-mode="snow" data-name="雪原群狼之舞" data-en="SNOWFIELD" data-no="贰" data-index="02" data-accent="#9fc3d4" data-brief="风雪改变车队的步幅，狼群事件在回合之间伏击。" data-points="小雪 / 大雪周期|大雪限制车辆移动|雪原事件与强化版" data-quote="雪落无声，狼群从不走直线。" style="--a:36deg;--neg:-36deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-snow"></use></svg></span><span class="mode-name">雪原</span><span class="mode-tag">风雪与狼群</span></button>
+            <button type="button" class="mode-card" data-mode="wannan" data-name="城邦裂变" data-en="CITY-STATES" data-no="叁" data-index="03" data-accent="#c47f5a" data-brief="斯巴达、雅典与波斯远征军同席。摩擦积满，事变重写战场。" data-points="三方阵营与固定配色|事变奖励按发起方分支|第 12 回合增援" data-quote="同盟是一张写好了日期的纸。" style="--a:72deg;--neg:-72deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-wannan"></use></svg></span><span class="mode-name">城邦</span><span class="mode-tag">斯巴达 / 雅典 / 波斯</span></button>
+            <button type="button" class="mode-card" data-mode="pirate" data-name="海盗港湾" data-en="CORSAIR" data-no="肆" data-index="04" data-accent="#4d9b92" data-brief="海面、栈桥与快艇。风向改变，登船者随浪漂移。" data-points="东风 / 西风漂移|登船与海炮|快艇与漩涡事件" data-quote="风向就是第二套规则。" style="--a:108deg;--neg:-108deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-pirate"></use></svg></span><span class="mode-name">海盗</span><span class="mode-tag">海战与炮火</span></button>
+            <button type="button" class="mode-card" data-mode="fog" data-name="雾夜幽乡" data-en="FOG NIGHT" data-no="伍" data-index="05" data-accent="#8b9bb0" data-brief="墓碑在雾里移动，鬼魂只在被照见的格子存在。" data-points="视野迷雾与隐藏单位|撞鬼与凝魂|墓碑会挪动位置" data-quote="你听见的脚步声，不一定来自人。" style="--a:144deg;--neg:-144deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-fog"></use></svg></span><span class="mode-name">雾夜</span><span class="mode-tag">鬼影与墓碑</span></button>
+            <button type="button" class="mode-card" data-mode="holy" data-name="圣辉之战" data-en="HOLY RADIANCE" data-no="陆" data-index="06" data-accent="#d9bd78" data-brief="地面与天空同时开战。升空、俯冲、抢占区域，直到圣辉落定。" data-points="双层地图同时可见|龙标与升空 / 俯冲|区域计分与火山喷发" data-quote="抬头之前，先想好怎么落地。" style="--a:180deg;--neg:-180deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-holy"></use></svg></span><span class="mode-name">圣辉</span><span class="mode-tag">双层天空</span></button>
+            <button type="button" class="mode-card" data-mode="mine" data-name="蛇骨矿洞" data-en="BONE MINE" data-no="柒" data-index="07" data-accent="#9987c2" data-brief="地面之下还有一层矿洞。竖井、晶簇、遗物与守着深处的矿主。" data-points="11×5 独立地下层|2 格视野与岩壁遮挡|晶簇 / 遗物 / 周期塌方" data-quote="灯火照不到的地方，才叫矿洞。" style="--a:216deg;--neg:-216deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-mine"></use></svg></span><span class="mode-name">矿洞</span><span class="mode-tag">双层矿井探索</span></button>
+            <button type="button" class="mode-card" data-mode="tide" data-name="蠕潮蚀野" data-en="CREEPING TIDE" data-no="捌" data-index="08" data-accent="#4f9bab" data-brief="潮眼每轮扩张，镇石被一寸寸啃食。斩潮、引潮，或看着阵地沉没。" data-points="潮涌逐轮扩张|斩潮 / 引潮 / 断潮|双镇石与第 20 回合判定" data-quote="潮水不讲道理，只讲方向。" style="--a:252deg;--neg:-252deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-tide"></use></svg></span><span class="mode-name">蠕潮</span><span class="mode-tag">潮眼 / 镇石 / 涌蚀</span></button>
+            <button type="button" class="mode-card" data-mode="beacon" data-name="烽燧阵线" data-en="BEACON LINE" data-no="玖" data-index="09" data-accent="#d4783d" data-brief="一道长城横贯战场，三座烽燧立在墙脊。跨墙、点燃、守住火光。" data-points="三座烽燧 · 两座关门|跨墙点燃耗 1 指挥点|三燧连城立即获胜" data-quote="烽火一起，整条边线都醒了。" style="--a:288deg;--neg:-288deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-beacon"></use></svg></span><span class="mode-name">烽燧</span><span class="mode-tag">长城 / 关门 / 烽燧</span></button>
+            <button type="button" class="mode-card" data-mode="neon" data-name="霓虹纪元" data-en="NEON ERA" data-no="拾" data-index="10" data-accent="#45d6c8" data-brief="核心喷出数据包。步兵可直行两格、车辆限速，抢包、护送、拦截，把 5 个包送回己方终端。" data-points="全兵种科技改装|抢包 / 护送 / 终端上传|每 3 回合公共事件" data-quote="代码不会说谎，只会被改写。" style="--a:324deg;--neg:-324deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-neon"></use></svg></span><span class="mode-name">霓虹</span><span class="mode-tag">数据核心 / 改装 / 事件</span></button>
+          </div>
+          <label class="field-label" for="mode-select" style="position:absolute;left:-9999px;">战场模式</label>
+          <select id="mode-select" class="mode-select sr-only" tabindex="-1" aria-hidden="true">
+            <option value="classic">⚔️ 经典模式</option>
+            <option value="snow">🐺 雪原群狼之舞</option>
+            <option value="wannan">🏛️ 城邦裂变</option>
+            <option value="pirate">🏴‍☠️ 海盗港湾</option>
+            <option value="fog">🌫️ 雾夜幽乡</option>
+            <option value="holy">✝️ 圣辉之战</option>
+            <option value="mine">⛏️ 蛇骨矿洞</option>
+            <option value="tide">🌊 蠕潮蚀野</option>
+            <option value="beacon">🔥 烽燧阵线</option>
+            <option value="neon">🛰️ 霓虹纪元</option>
+          </select>
+        </div>
+        <div class="chart-hint"><b>十阵列位</b> · 点击星位或按 ← → 切换战场</div>
+      </section>
+
+      <aside class="observatory-zone">
+        <div class="observatory" id="lobby-actions">
+          <div class="obs-head"><h2>出师作战</h2><span>联机 / 单机 · 房主定战场</span></div>
+          <button class="big-btn return-btn" id="return-game-btn" hidden>回到之前的房间 · <span id="return-room-id"></span></button>
+          <button class="big-btn secondary reset-btn" id="reset-lobby-btn" hidden>重置大厅状态</button>
+          <p class="obs-note">选定星位后创建房间，或凭六位房号入席。</p>
+          <label class="field lobby-play-field" for="lobby-play-mode"><span>对 局 方 式</span>
+            <select id="lobby-play-mode">
+              <option value="online">联机对战</option>
+              <option value="local">单机模式 · 双人热座</option>
+              <option value="ai">AI 对战单机模式</option>
+            </select>
+          </label>
+          <button class="big-btn primary" id="create-room-btn">开拔 · 创建房间 <span class="arrow">→</span></button>
+          <div class="lobby-divider"><span>或 持 凭 文 入 席</span></div>
+          <div class="join-row">
+            <label class="field" for="room-code-input"><span>房 间 号</span>
+              <input id="room-code-input" class="room-code-input" maxlength="6" placeholder="输入六位房号" autocomplete="off" spellcheck="false">
+            </label>
+            <button class="big-btn secondary outline" id="join-room-btn">加入</button>
+          </div>
+          <div class="obs-foot"><span>服务器权威 · 隐藏情报</span><span>断线可重连</span></div>
+        </div>
+
+        <div class="observatory room-observatory" id="room-panel" hidden>
+          <div class="obs-head"><h2>整备入席</h2><span>双方准备后开战</span></div>
+          <div class="room-code-block">
+            <span class="field-label">房 间 号</span>
+            <div class="room-code-display" id="room-code-display">------</div>
+            <button class="text-btn" id="copy-room-btn">复制房间号</button>
+          </div>
+          <div class="room-mode-line">战场：<strong id="room-mode-label">—</strong></div>
+          <div class="room-slots">
+            <div class="room-slot" id="slot-red">
+              <span class="slot-dot red"></span>
+              <div><strong>红方</strong><small id="slot-red-state">等待中</small></div>
+              <span class="slot-tag" id="slot-red-tag"></span>
+            </div>
+            <div class="room-slot" id="slot-blue">
+              <span class="slot-dot blue"></span>
+              <div><strong>蓝方</strong><small id="slot-blue-state">等待加入</small></div>
+              <span class="slot-tag" id="slot-blue-tag"></span>
+            </div>
+          </div>
+          <p class="room-hint" id="room-hint">把房间号发给对手；双方点击「准备」后开始。</p>
+          <div class="lobby-row buttons-row">
+            <button class="big-btn primary" id="ready-btn">准备</button>
+            <button class="big-btn secondary" id="leave-btn">离开房间</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+    <div class="astro-footline">
+      <span>联机 / 单机 / 剧情 · 十种战场</span>
+      <span>墨绿与铜金 · v2.1.0 / 规则 v5.6</span>
+    </div>
+  </main>
+
+  <!-- 对局 -->
+  <main class="game" id="game" hidden>
+    <div class="game-topbar game-top">
+      <div class="room">
+        <span class="label">作 战 室</span>
+        <span class="code game-room" id="game-room">—</span>
+      </div>
+      <div class="game-top-actions game-top-right">
+        <span class="conn-dot" id="opponent-status">对手：—</span>
+        <button class="mini-btn music-toggle" type="button" aria-pressed="true" title="关闭背景音乐">♪ <span class="music-label">音乐</span></button>
+        <button class="mini-btn" id="codex-btn">图鉴</button>
+        <button class="mini-btn" id="rules-btn">规则</button>
+        <button class="mini-btn" id="exit-game-btn">退出</button>
+      </div>
+    </div>
+
+    <div class="game-container">
+      <div class="hud">
+        <div class="faction red" id="hud-red">
+          <div class="red-info" id="red-info-text"><span class="faction-crest" aria-hidden="true"></span><span class="faction-name">红方</span></div>
+        </div>
+        <div class="round">
+          <span class="r-no" id="round-no">布 阵</span>
+          <span class="r-phase" id="phase-text">🛒 部署</span>
+          <button type="button" class="weather-chip" id="weather-chip" style="display:none;" aria-label="查看天候详情"></button>
+          <div class="round-tools">
+            <button class="status-btn" id="view-cards-btn" style="display:none" title="查看我的技能卡">📋 技能卡</button>
+            <button class="status-btn" id="view-mines-btn" style="display:none" disabled title="联机版不提供查看地雷">💣</button>
+            <button class="status-btn" id="view-enemy-btn" style="display:none">🔍</button>
+            <button class="status-btn ghost" id="ghost-view-btn" style="display:none">👻</button>
+          </div>
+        </div>
+        <div class="faction blue" id="hud-blue">
+          <div class="blue-info" id="blue-info-text"><span class="faction-crest" aria-hidden="true"></span><span class="faction-name">蓝方</span></div>
+        </div>
+      </div>
+
+      <div class="game-main">
+      <div class="stage">
+      <div class="map-stack">
+        <div class="sky-map" id="sky-map" hidden>
+          <div class="map-label sky-label"><span>☁️ 天空</span><button class="map-toggle" id="toggle-sky-btn" type="button" title="收起 / 展开天空地图">收起</button></div>
+          <div class="battlefield sky-battlefield"><div class="world sky-world"><div class="terrain sky-terrain" aria-hidden="true"></div><div class="edgefade sky-edgefade" aria-hidden="true"></div><div id="sky-grid" class="grid"></div></div></div>
+        </div>
+        <div class="mine-map" id="mine-map" hidden>
+          <div class="map-label mine-label"><span>⛏️ 矿洞</span><span class="map-note" id="mine-vision-label">视野 2 格 · 岩壁阻挡视线</span></div>
+          <div class="battlefield mine-battlefield"><div class="world mine-world"><div class="terrain mine-terrain" aria-hidden="true"></div><div class="edgefade mine-edgefade" aria-hidden="true"></div><div id="mine-grid" class="grid"></div></div></div>
+        </div>
+        <div class="ground-map">
+          <div class="map-label ground-label" id="ground-label" hidden>🌋 地面</div>
+          <div class="battlefield ground-battlefield"><div class="world"><div class="terrain" aria-hidden="true"></div><div class="edgefade" aria-hidden="true"></div><div class="props" aria-hidden="true">
+            <div class="wall3d"></div>
+            <div class="tree3d t1"></div>
+            <div class="tree3d t2"></div>
+            <div class="tree3d t3"></div>
+            <div class="tree3d t4"></div>
+            <div class="tree3d t5"></div>
+            <div class="tree3d t6"></div>
+            <div class="beacon-props">
+              <svg class="bprop bp-rack-left" viewBox="0 0 120 120"><use href="#prop-rack"></use></svg>
+              <svg class="bprop bp-rack-right" viewBox="0 0 120 120"><use href="#prop-rack"></use></svg>
+              <svg class="bprop bp-shields" viewBox="0 0 110 100"><use href="#prop-shields"></use></svg>
+              <svg class="bprop bp-crates" viewBox="0 0 110 100"><use href="#prop-crates"></use></svg>
+              <svg class="bprop bp-barricade" viewBox="0 0 120 90"><use href="#prop-barricade"></use></svg>
+              <svg class="bprop bp-drum" viewBox="0 0 90 100"><use href="#prop-drum"></use></svg>
+              <svg class="bprop bp-banner-left" viewBox="0 0 80 150"><use href="#prop-banner"></use></svg>
+              <svg class="bprop bp-banner-right" viewBox="0 0 80 150"><use href="#prop-banner"></use></svg>
+              <span class="bp-brazier bp-brazier-left"><svg viewBox="0 0 80 90"><use href="#prop-brazier"></use></svg><i class="bp-flame"></i><i class="bp-flame bp-flame-2"></i></span>
+              <span class="bp-brazier bp-brazier-right"><svg viewBox="0 0 80 90"><use href="#prop-brazier"></use></svg><i class="bp-flame"></i><i class="bp-flame bp-flame-2"></i></span>
+              <span class="beacon-embers"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            </div>
+            <div class="volcano3d" aria-hidden="true">
+          <svg viewBox="0 0 320 260">
+            <defs>
+              <linearGradient id="vRock" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6a5c47"/>
+                <stop offset=".22" stop-color="#4c4234"/>
+                <stop offset=".62" stop-color="#2e2821"/>
+                <stop offset="1" stop-color="#0f0c09"/>
+              </linearGradient>
+              <linearGradient id="vLeft" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#b39a72" stop-opacity=".34"/>
+                <stop offset=".42" stop-color="#b39a72" stop-opacity=".06"/>
+                <stop offset="1" stop-color="#b39a72" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="vRight" x1="0" y1="0" x2="1" y2="0">
+                <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+                <stop offset="1" stop-color="#000" stop-opacity=".5"/>
+              </linearGradient>
+              <radialGradient id="vGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0" stop-color="#ffd08a" stop-opacity=".95"/>
+                <stop offset=".4" stop-color="#ff7a24" stop-opacity=".6"/>
+                <stop offset="1" stop-color="#ff4a00" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="vBlur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="8"/></filter>
+              <filter id="vSoft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter>
+              <filter id="vNoise" x="0" y="0" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="4" seed="17" result="n"/>
+                <feColorMatrix in="n" type="saturate" values="0"/>
+                <feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer>
+              </filter>
+              <clipPath id="vClip"><path d="M4 240 C 50 236 82 206 106 158 C 122 124 136 102 142 92 L 178 92 C 184 102 198 124 214 158 C 238 206 270 236 316 240 Z"/></clipPath>
+            </defs>
+            <ellipse cx="160" cy="242" rx="150" ry="20" fill="#000" opacity=".55" filter="url(#vBlur)"/>
+            <ellipse cx="160" cy="234" rx="128" ry="26" fill="#170f0a" opacity=".6" filter="url(#vBlur)"/>
+            <g clip-path="url(#vClip)">
+              <path d="M4 240 C 50 236 82 206 106 158 C 122 124 136 102 142 92 L 178 92 C 184 102 198 124 214 158 C 238 206 270 236 316 240 Z" fill="url(#vRock)"/>
+              <rect x="0" y="86" width="320" height="160" filter="url(#vNoise)" opacity=".5" style="mix-blend-mode:overlay"/>
+              <path d="M4 240 C 50 236 82 206 106 158 C 122 124 136 102 142 92 L 156 92 L 132 240 Z" fill="url(#vLeft)"/>
+              <path d="M178 92 C 184 102 198 124 214 158 C 238 206 270 236 316 240 L 212 240 Z" fill="url(#vRight)"/>
+              <g fill="none" stroke-linecap="round">
+                <path d="M118 210 C 130 188 138 162 144 132" stroke="#8d7a5c" stroke-width="3.2" opacity=".25"/>
+                <path d="M104 224 C 116 204 124 180 130 152" stroke="#0a0806" stroke-width="4" opacity=".28"/>
+                <path d="M132 204 C 140 184 146 164 150 142" stroke="#6d5e48" stroke-width="2.4" opacity=".3"/>
+                <path d="M190 204 C 184 182 178 160 174 136" stroke="#0a0806" stroke-width="4" opacity=".3"/>
+                <path d="M204 220 C 198 198 194 176 192 152" stroke="#5d5140" stroke-width="2.4" opacity=".26"/>
+                <path d="M90 224 C 104 220 120 222 136 230" stroke="#0a0806" stroke-width="3" opacity=".25"/>
+                <path d="M224 220 C 210 216 194 218 180 226" stroke="#0a0806" stroke-width="3" opacity=".25"/>
+                <path d="M74 230 C 96 224 120 226 142 234" stroke="#7d6b50" stroke-width="2" opacity=".22"/>
+              </g>
+              <g fill="none" stroke-linecap="round">
+                <path d="M150 104 C 145 134 136 164 120 196" stroke="#ff6a1a" stroke-width="14" opacity=".22" filter="url(#vSoft)"/>
+                <path d="M150 104 C 145 134 136 164 120 196" stroke="#ff7a24" stroke-width="6.4"/>
+                <path d="M150 104 C 145 134 136 164 120 196" stroke="#ffcf7a" stroke-width="2.1" opacity=".9"/>
+                <path d="M150 104 C 145 134 136 164 120 196" stroke="#ff7a24" stroke-width="2" opacity=".8"/>
+                <path d="M161 106 C 164 144 171 184 184 222" stroke="#ff6a1a" stroke-width="13" opacity=".2" filter="url(#vSoft)"/>
+                <path d="M161 106 C 164 144 171 184 184 222" stroke="#ff7a24" stroke-width="5.4"/>
+                <path d="M161 106 C 164 144 171 184 184 222" stroke="#ffcf7a" stroke-width="1.9" opacity=".85"/>
+                <path d="M172 102 C 182 126 194 150 208 176" stroke="#ff6a1a" stroke-width="10" opacity=".2" filter="url(#vSoft)"/>
+                <path d="M172 102 C 182 126 194 150 208 176" stroke="#ff7a24" stroke-width="3.8"/>
+                <path d="M137 108 C 128 128 118 144 106 158" stroke="#ff6a1a" stroke-width="7" opacity=".18" filter="url(#vSoft)"/>
+                <path d="M137 108 C 128 128 118 144 106 158" stroke="#ff7a24" stroke-width="2.6"/>
+              </g>
+              <g fill="#ff8a2a">
+                <circle cx="120" cy="196" r="2.2" opacity=".8"/>
+                <circle cx="184" cy="222" r="2" opacity=".7"/>
+                <circle cx="106" cy="158" r="1.6" opacity=".7"/>
+              </g>
+            </g>
+            <path d="M4 240 C 50 236 82 206 106 158 C 122 124 136 102 142 92 L 178 92 C 184 102 198 124 214 158 C 238 206 270 236 316 240" fill="none" stroke="#0a0806" stroke-opacity=".5" stroke-width="2"/>
+            <path d="M108 156 C 124 122 136 102 142 92" fill="none" stroke="#b9a27a" stroke-opacity=".22" stroke-width="2"/>
+            <ellipse cx="160" cy="92" rx="34" ry="10.5" fill="#20130c"/>
+            <ellipse cx="160" cy="92" rx="28" ry="8.2" fill="#351d0e"/>
+            <ellipse cx="160" cy="92" rx="22" ry="5.8" fill="url(#vGlow)"/>
+            <ellipse cx="160" cy="92" rx="12" ry="3.4" fill="#ffb45a" opacity=".92" filter="url(#vSoft)"/>
+            <g class="v-smoke" fill="#b6ada0" opacity=".34" filter="url(#vBlur)">
+              <ellipse cx="145" cy="66" rx="38" ry="17"/>
+              <ellipse cx="178" cy="43" rx="29" ry="14"/>
+              <ellipse cx="151" cy="21" rx="21" ry="11"/>
+            </g>
+            <g fill="#ff8a2a">
+              <circle cx="140" cy="84" r="1.7" opacity=".8"/>
+              <circle cx="181" cy="88" r="1.4" opacity=".7"/>
+              <circle cx="156" cy="78" r="1.2" opacity=".8"/>
+            </g>
+          </svg>
+          </div></div><div id="battle-grid" class="grid"></div></div></div>
+        </div>
+      </div>
+
+      <div class="actionbar">
+        <div class="deploy-panel" id="deploy-panel" hidden>
+          <button class="deploy-btn" data-type="步兵"><span>⚔️</span> 步兵 2费</button>
+          <button class="deploy-btn" data-type="车"><span>🐎</span> 车 6费</button>
+          <button class="deploy-btn" data-type="炮兵"><span>💣</span> 炮兵 4费</button>
+          <button class="deploy-btn" data-type="地雷"><span>💥</span> 地雷 3费</button>
+          <button class="deploy-btn" data-type="后勤兵"><span>🛠️</span> 后勤兵 3费</button>
+          <button class="deploy-btn" data-type="防御工事"><span>🏗️</span> 防御工事 1费</button>
+          <button class="deploy-btn" id="armory-deploy-btn" type="button" hidden></button>
+          <button class="deploy-btn remove-mode" id="remove-mode-btn">🗑️ 拆除模式</button>
+          <button class="deploy-btn done" id="deploy-done-btn">✅ 完成部署</button>
+        </div>
+        <div class="actions-row">
+          <div class="action-buttons">
+            <button class="btn" id="draw-btn" hidden>🎴 抽卡</button>
+            <button class="btn" id="use-card-btn" hidden>✨ 用卡</button>
+            <button class="btn" id="play-card-btn" hidden>▶️ 打出</button>
+            <button class="btn" id="start-action-btn" hidden>⚔️ 行动</button>
+            <button class="btn" id="tide-purge-btn" hidden>🌊 斩潮</button>
+            <button class="btn" id="tide-mark-btn" hidden>🌀 引潮</button>
+            <button class="btn" id="end-turn-btn" hidden>⏭️ 结束回合</button>
+            <button class="btn" id="cancel-btn" hidden>❌ 取消</button>
+          </div>
+          <div class="actions-right">
+            <span class="hint" id="action-hint"></span>
+            <button class="btn-danger" id="surrender-btn">🏳️ 投降</button>
+          </div>
+        </div>
+      </div>
+      </div><!-- /stage -->
+
+      <aside class="rail">
+        <div class="card-library-container">
+          <div class="library-wrap rail-block">
+            <div class="rail-head"><span class="library-label">红 方 牌 库</span><span id="red-library-count">0 张</span></div>
+            <div class="library-tools" id="red-library-tools" hidden></div>
+            <div class="card-library red-library" id="red-library"></div>
+          </div>
+          <div class="library-wrap rail-block">
+            <div class="rail-head"><span class="library-label">蓝 方 牌 库</span><span id="blue-library-count">0 张</span></div>
+            <div class="library-tools" id="blue-library-tools" hidden></div>
+            <div class="card-library blue-library" id="blue-library"></div>
+          </div>
+        </div>
+        <section class="rail-block log-block">
+          <div class="rail-head">战 报<span>实时</span></div>
+          <div class="log-container" id="log-panel" aria-live="polite"></div>
+        </section>
+      </aside>
+      </div><!-- /game-main -->
+    </div>
+  </main>
+
+  <!-- 抽卡 -->
+  <div class="armory-overlay" id="armoryOverlay"><div class="armory-panel"><div class="armory-kicker">🏪 军火库 · 开局补给</div><h2 id="armoryTitle">军火库</h2><p id="armoryHint">从三个单位中选择一个带入本局，或跳过。选择会记录在日志中。</p><div id="armoryOptions" class="armory-options"></div><div class="armory-footer"><span id="armoryWait"></span><button class="btn secondary" id="armorySkipBtn" type="button">跳过军火库</button></div></div></div>
+
+  <div class="wannan-overlay" id="wannanIncidentOverlay">
+    <div class="wannan-panel">
+      <div class="wannan-kicker">⚡ 城邦裂变</div>
+      <h2 id="wannanIncidentTitle">是否点燃城邦裂变？</h2>
+      <p id="wannanIncidentText"></p>
+      <div class="wannan-actions">
+        <button class="btn secondary" id="wannanIncidentDecline" type="button">暂不发动（摩擦+1）</button>
+        <button class="btn" id="wannanIncidentAccept" type="button">点燃城邦裂变</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="draw-overlay" id="drawOverlay">
+    <div class="draw-peek-banner" id="drawPeekBanner">
+      <span>查看战场中 · <b id="drawPeekCount">5</b>s</span>
+      <button class="btn secondary" id="drawPeekBack" type="button">返回抽卡</button>
+    </div>
+    <div class="draw-card-panel">
+      <h2>选择一张技能卡加入牌库</h2>
+      <div class="draw-meta">
+        <span class="draw-sp">己方技能点 <b id="drawSpText">⚡0</b></span>
+        <button class="peek-btn" id="drawPeekBtn" type="button">👁 查看战场（5s）</button>
+        <button class="peek-btn" id="rerollDrawBtn" type="button" style="display:none;">🔄 换一批</button>
+      </div>
+      <div id="drawCardPanel" class="draw-card-list"></div>
+      <button class="btn" id="cancelDrawBtn">技能点不足，取消</button>
+    </div>
+  </div>
+
+  <!-- 己方技能卡预览 -->
+  <div class="hand-overlay" id="handOverlay">
+    <div class="draw-card-panel hand-panel">
+      <h2 id="handTitle">我的技能卡</h2>
+      <div id="handCards" class="draw-card-list"></div>
+      <button class="btn" id="closeHandBtn">关闭</button>
+    </div>
+  </div>
+
+
+  <!-- 恢复席位 -->
+  <div class="seat-overlay" id="seatOverlay">
+    <div class="seat-panel">
+      <h2>恢复上次的席位</h2>
+      <p id="seatPromptText">该房间在本浏览器保存了席位，请选择返回身份。</p>
+      <div id="seatChoices" class="seat-choices"></div>
+      <button class="btn secondary" id="seatNewBtn">以新玩家身份加入</button>
+      <button class="text-btn" id="seatCancelBtn">取消</button>
+    </div>
+  </div>
+
+  <!-- 选目标提示 -->
+  <div class="target-hint" id="targetHint">
+    <span id="targetHintText">选择目标</span>
+    <button class="btn" id="finishTargetBtn">完成选择</button>
+    <button class="btn" id="cancelTargetBtn">取消</button>
+  </div>
+
+  <!-- 胜负 -->
+  <div class="victory-overlay" id="victoryOverlay">
+    <div class="victory-card">
+      <div class="victory-text" id="victoryText"></div>
+      <p class="rematch-status" id="rematchStatus"></p>
+      <div class="victory-actions">
+        <button class="btn" id="rematchBtn">🔁 再来一局（交换先后手）</button>
+        <button class="btn secondary" id="exportReplayBtn">📄 导出本局记录</button>
+        <button class="btn secondary" id="victoryLeaveBtn">返回大厅</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 卡牌详情 -->
+  <div class="card-help-overlay" id="cardHelpOverlay">
+    <div class="card-help-panel">
+      <div class="card-help-kicker">📖 技能卡详情</div>
+      <h2 id="cardHelpTitle">技能卡</h2>
+      <div class="card-help-meta" id="cardHelpMeta"></div>
+      <p class="card-help-desc" id="cardHelpDesc"></p>
+      <p class="card-help-note" id="cardHelpNote"></p>
+      <div class="card-help-keywords" id="cardHelpKeywords"></div>
+      <button class="btn" id="cardHelpClose">关闭</button>
+    </div>
+  </div>
+
+  <!-- 天候详情 -->
+  <div class="card-help-overlay weather-overlay" id="weatherOverlay">
+    <div class="card-help-panel weather-panel" role="dialog" aria-modal="true" aria-labelledby="weatherTitle">
+      <div class="card-help-kicker">🌤️ 天候</div>
+      <h2 id="weatherTitle">天候</h2>
+      <div class="weather-detail" id="weatherDetail"></div>
+      <button class="btn" id="weatherClose">关闭</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <div class="auth-modal" id="authModal" hidden>
+    <div class="auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button type="button" class="auth-modal-close" id="authCloseBtn" aria-label="关闭">×</button>
+      <span class="auth-modal-kicker">站点账号 · 统一认证</span>
+      <h2 id="authTitle">欢迎回来</h2>
+      <p class="auth-modal-user" id="authModalUser">使用站点账号登录</p>
+      <p class="auth-modal-note">使用网站用户名和密码登录。登录信息由站点认证服务校验，不保存密码。</p>
+      <form class="auth-modal-form" id="authLoginForm" novalidate>
+        <div class="auth-field">
+          <label class="auth-field-label" for="authUsername">用户名</label>
+          <input type="text" id="authUsername" class="auth-modal-input" autocomplete="username" maxlength="24" required>
+        </div>
+        <div class="auth-field">
+          <label class="auth-field-label" for="authPassword">密码</label>
+          <div class="auth-password-wrap">
+            <input type="password" id="authPassword" class="auth-modal-input" autocomplete="current-password" maxlength="128" required>
+            <button type="button" class="auth-eye-btn" id="authPasswordToggle" aria-label="显示密码">显示</button>
+          </div>
+        </div>
+        <p class="auth-modal-error" id="authError" hidden></p>
+        <button type="submit" class="btn auth-modal-submit" id="authLoginBtn">登 录</button>
+      </form>
+      <p class="auth-modal-switch">还没有账号？<a id="authWebLoginBtn" href="/login" target="_blank" rel="noopener">前往网站注册</a></p>
+      <p class="auth-modal-footnote">账号由站点统一认证</p>
+    </div>
+  </div>
+
+  <script src="/client/ui-shared.js"></script>
+  <script src="/client/runtime-config.js"></script>
+  <script src="/client/auth-client.js"></script>
+  <script src="/client/weather-fx.js"></script>
+  <script src="/client/lobby-stars.js"></script>
+  <script src="/shared/constants.js"></script>
+  <script src="/client/music.js"></script>
+  <script src="/client/sfx.js"></script>
+  <script src="/client/online.js"></script>
+</body>
+</html>

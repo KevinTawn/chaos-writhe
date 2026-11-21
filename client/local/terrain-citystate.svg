@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+  <!-- 城邦裂变地形：只画地面材质与平面马赛克，不画天空、海平线或建筑，
+       场景物体交给 2.5D 立体道具（树木、神庙柱廊）表现。 -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2=".35" y2="1">
+      <stop offset="0" stop-color="#c3b18b"/>
+      <stop offset=".42" stop-color="#b09c74"/>
+      <stop offset=".76" stop-color="#9d8963"/>
+      <stop offset="1" stop-color="#887553"/>
+    </linearGradient>
+    <linearGradient id="dust" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e2d5b5" stop-opacity=".42"/>
+      <stop offset=".55" stop-color="#cbb995" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#8b7855" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="slabs" width="168" height="96" patternUnits="userSpaceOnUse">
+      <rect width="168" height="96" fill="#c8b891" opacity=".34"/>
+      <path d="M0 1.5H168M0 94.5H168M1.5 0V96M166.5 0V96" stroke="#716044" stroke-width="2" opacity=".28"/>
+      <path d="M0 48H168M84 0V48M42 48V96M126 48V96" stroke="#8d7b5b" stroke-width="1.4" opacity=".24"/>
+      <path d="M12 12H70M98 60H154" stroke="#e6dcc4" stroke-width="1.2" opacity=".22"/>
+      <ellipse cx="118" cy="24" rx="14" ry="4" fill="#9b8965" opacity=".14"/>
+      <ellipse cx="38" cy="76" rx="18" ry="5" fill="#8d7b5b" opacity=".12"/>
+    </pattern>
+    <pattern id="meander" width="72" height="30" patternUnits="userSpaceOnUse">
+      <rect width="72" height="30" fill="#8a7554" opacity=".16"/>
+      <path d="M4 24V10h18v8H10v-4h8M27 6h18v18H27v-6h12v-6H27M52 24V10h16v8H56v-4h8"
+            fill="none" stroke="#6f4a34" stroke-width="2.4" opacity=".46"/>
+    </pattern>
+    <radialGradient id="wear" cx=".5" cy=".42" r=".72">
+      <stop offset="0" stop-color="#f0e5c8" stop-opacity=".26"/>
+      <stop offset=".62" stop-color="#c9b78f" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#55462f" stop-opacity=".16"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="600" fill="url(#ground)"/>
+  <rect width="1200" height="600" fill="url(#slabs)"/>
+
+  <!-- 风化的灰泥与泥土斑块，全部平铺在地面上 -->
+  <path d="M0 92 Q150 56 300 84 T610 70 T920 92 T1200 66 L1200 0 L0 0 Z" fill="url(#dust)" opacity=".8"/>
+  <path d="M0 470 Q180 430 350 462 T700 448 T1010 476 T1200 452 L1200 600 L0 600 Z" fill="#7b694a" opacity=".22"/>
+  <path d="M120 208 Q250 170 390 204 T650 198 T900 214 L900 330 Q720 360 560 330 T250 342 Z" fill="url(#dust)" opacity=".55"/>
+  <path d="M760 330 Q860 300 980 322 T1200 316 L1200 470 Q1030 500 900 472 T760 462 Z" fill="#6f5e41" opacity=".13"/>
+  <ellipse cx="240" cy="480" rx="180" ry="54" fill="#7f6b49" opacity=".16"/>
+  <ellipse cx="980" cy="180" rx="210" ry="46" fill="#e0d2b0" opacity=".16"/>
+
+  <!-- 石板裂缝 -->
+  <g fill="none" stroke="#5f4f37" stroke-linecap="round" opacity=".26">
+    <path d="M84 120 l34 26 -12 30 42 34 -8 38" stroke-width="1.8"/>
+    <path d="M420 62 l-24 40 18 30 -30 42" stroke-width="1.6"/>
+    <path d="M706 420 l38 22 -10 34 46 30" stroke-width="1.9"/>
+    <path d="M1040 250 l-30 34 16 30 -24 40" stroke-width="1.5"/>
+    <path d="M560 540 l34 -18 30 16 28 -10" stroke-width="1.4"/>
+  </g>
+  <g fill="#66543a" opacity=".3">
+    <ellipse cx="330" cy="150" rx="3.2" ry="1.8"/>
+    <ellipse cx="612" cy="248" rx="2.4" ry="1.4"/>
+    <ellipse cx="820" cy="380" rx="3.6" ry="2"/>
+    <ellipse cx="150" cy="360" rx="2.6" ry="1.5"/>
+    <ellipse cx="1105" cy="520" rx="3" ry="1.7"/>
+  </g>
+
+  <!-- 铺在广场边缘的希腊回纹马赛克（平面装饰，不是场景） -->
+  <rect y="0" width="1200" height="30" fill="url(#meander)"/>
+  <rect y="570" width="1200" height="30" fill="url(#meander)"/>
+  <path d="M0 30H1200M0 570H1200" stroke="#5f4a33" stroke-width="2" opacity=".32"/>
+
+  <!-- 中央大理石磨损圆盘，低调的平面铺装 -->
+  <circle cx="600" cy="300" r="150" fill="#cbb994" opacity=".14"/>
+  <circle cx="600" cy="300" r="150" fill="none" stroke="#7d6a4c" stroke-width="2" opacity=".18"/>
+  <circle cx="600" cy="300" r="112" fill="none" stroke="#8d7a58" stroke-width="1.4" stroke-dasharray="3 7" opacity=".2"/>
+  <circle cx="600" cy="300" r="72" fill="none" stroke="#6f5b3f" stroke-width="1.2" opacity=".16"/>
+
+  <!-- 边缘压暗与中心受光，保持地面质感 -->
+  <rect width="1200" height="600" fill="url(#wear)"/>
+</svg>

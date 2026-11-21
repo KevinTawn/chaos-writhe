@@ -1,0 +1,22 @@
+# 发行包：走 GitHub Release 附件，不进 git 历史
+安装包/
+*.exe
+*.apk
+
+# 依赖
+node_modules/
+
+# 运行期产物
+server/runtime/
+server/logs/
+*.log
+
+# 本地配置（不要提交真实密钥）
+.env
+.env.local
+.env.production
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini

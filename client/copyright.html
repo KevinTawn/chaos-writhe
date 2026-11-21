@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>混乱与蠕动 · 版权信息</title>
+<link rel="icon" type="image/png" href="/client/qianjinsi-icon.png">
+<style>
+  :root {
+    --ink: #090b08;
+    --brass: #b08a46;
+    --brass-hi: #d6b471;
+    --text: #e9e1cc;
+    --muted: #9c9482;
+    --faint: #6f6a5c;
+    --line: rgba(190, 155, 90, .16);
+    --display: "KaiTi", "STKaiti", "华文楷体", "Source Han Serif SC", serif;
+    --mono: "Consolas", "Courier New", monospace;
+    --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh; padding: 46px 18px 60px;
+    background-color: var(--ink);
+    background-image:
+      radial-gradient(ellipse 100% 55% at 50% -4%, #172016 0%, #0a0d08 56%, #060705 100%);
+    color: var(--text);
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+    display: flex; justify-content: center; align-items: flex-start;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: var(--noise); opacity: .045; mix-blend-mode: overlay;
+  }
+  a { color: var(--brass-hi); text-decoration: none; }
+  a:hover { color: #ecd49a; }
+  .page {
+    position: relative; z-index: 1; width: 100%; max-width: 880px;
+    padding: 34px 52px 38px;
+    background: linear-gradient(165deg, #1a2016 0%, #12170f 100%);
+    border: 1px solid rgba(190, 155, 90, .26);
+    box-shadow: 0 40px 80px rgba(0, 0, 0, .65), inset 0 1px 0 rgba(255, 240, 200, .05);
+  }
+  .page::before {
+    content: ''; position: absolute; inset: 7px;
+    border: 1px solid rgba(190, 155, 90, .1); pointer-events: none;
+  }
+  .corner { position: absolute; width: 13px; height: 13px; z-index: 2; border: 1px solid rgba(190, 155, 90, .5); }
+  .corner.tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .corner.tr { top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
+  .corner.bl { bottom: -1px; left: -1px; border-right: 0; border-top: 0; }
+  .corner.br { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+  .topbar { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; }
+  .back { font-size: 11px; letter-spacing: .16em; color: var(--muted); }
+  .back:hover { color: var(--brass-hi); }
+  .topnav { display: flex; gap: 20px; font-size: 10px; letter-spacing: .2em; color: var(--faint); }
+
+  .eyebrow {
+    margin: 40px 0 0; font-family: var(--mono); font-size: 10px;
+    letter-spacing: .42em; color: var(--brass); text-transform: uppercase;
+  }
+  h1 {
+    margin: 14px 0 6px; font-family: var(--display); font-weight: 400;
+    font-size: 40px; letter-spacing: .3em; color: #e6ddc6;
+  }
+  .subtitle { margin: 0 0 30px; font-size: 11px; letter-spacing: .3em; color: var(--faint); }
+
+  .dev-block {
+    display: flex; align-items: center; gap: 22px;
+    padding: 20px 0 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    margin-bottom: 30px;
+  }
+  .dev-icon {
+    width: 88px; height: 88px; flex: none; object-fit: cover;
+    border-radius: 18px; background: #0b1016;
+    border: 1px solid rgba(190, 155, 90, .55);
+    box-shadow:
+      0 0 0 4px rgba(190, 155, 90, .07),
+      0 14px 30px rgba(0, 0, 0, .55),
+      0 0 26px rgba(86, 154, 224, .18);
+    user-select: none; -webkit-user-drag: none;
+  }
+  .dev-label { margin: 0 0 5px; font-size: 9px; letter-spacing: .32em; color: var(--faint); }
+  .dev-name {
+    margin: 0; font-family: var(--display); font-size: 30px; letter-spacing: .22em;
+    color: var(--brass-hi); font-weight: 400;
+  }
+  .dev-note { margin: 7px 0 0; font-size: 10px; letter-spacing: .14em; color: var(--muted); }
+
+  .info-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line); margin-bottom: 32px;
+  }
+  .info-cell { background: #141a11; padding: 13px 15px; }
+  .info-cell span { display: block; font-size: 9px; letter-spacing: .24em; color: var(--faint); margin-bottom: 7px; }
+  .info-cell b {
+    font-family: var(--mono); font-size: 14px; font-weight: 400;
+    letter-spacing: .08em; color: var(--brass-hi);
+  }
+
+  section { margin-bottom: 28px; }
+  h2 {
+    margin: 0 0 12px; font-family: var(--display); font-weight: 400;
+    font-size: 18px; letter-spacing: .24em; color: #e0d7bf;
+    display: flex; align-items: center; gap: 14px;
+  }
+  h2::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  p, li { margin: 0 0 10px; font-size: 13px; line-height: 2; color: var(--muted); }
+  strong { color: #d9cfb4; font-weight: 600; }
+  ul { margin: 0; padding-left: 20px; }
+  li::marker { color: var(--brass); }
+  .legal {
+    padding: 16px 18px; border-left: 2px solid rgba(164, 64, 47, .7);
+    background: rgba(164, 64, 47, .06); color: #cbbf9f;
+  }
+  .legal p:last-child { margin-bottom: 0; }
+  .fine { font-size: 11px; color: var(--faint); line-height: 1.9; }
+
+  footer {
+    margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+    font-size: 10px; letter-spacing: .18em; color: var(--faint);
+  }
+  footer nav { display: flex; gap: 20px; }
+
+  @media (max-width: 720px) {
+    body { padding: 18px 10px 36px; }
+    .page { padding: 24px 20px 28px; }
+    h1 { font-size: 30px; letter-spacing: .22em; }
+    .info-grid { grid-template-columns: 1fr 1fr; }
+    .dev-block { gap: 16px; }
+    .dev-icon { width: 72px; height: 72px; border-radius: 15px; }
+    .dev-name { font-size: 24px; }
+    .topnav { display: none; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span>
+  <span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span>
+
+  <div class="topbar">
+    <a class="back" href="/">← 返回联机大厅</a>
+    <nav class="topnav"><a href="/local">本地热座</a><a href="/rules">游玩规则</a></nav>
+  </div>
+
+  <p class="eyebrow">Credits &amp; Copyright</p>
+  <h1>版权信息</h1>
+  <p class="subtitle">混乱与蠕动 · CHAOS &amp; WRITHE</p>
+
+  <div class="dev-block">
+    <img class="dev-icon" src="/client/qianjinsi-icon.png" alt="前进四 图标" width="88" height="88" decoding="async">
+    <div>
+      <p class="dev-label">开 发 者</p>
+      <p class="dev-name">前进四</p>
+      <p class="dev-note">规则设计 · 程序实现 · 界面与美术统筹</p>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-cell"><span>作 品</span><b>混乱与蠕动</b></div>
+    <div class="info-cell"><span>应 用 版 本</span><b>2.1.0</b></div>
+    <div class="info-cell"><span>规 则 版 本</span><b>v5.6</b></div>
+    <div class="info-cell"><span>最 后 更 新</span><b>2026-11-07</b></div>
+  </div>
+
+  <section>
+    <h2>版权声明</h2>
+    <div class="legal">
+      <p><strong>© 2026 前进四。保留所有权利。</strong></p>
+      <p>《混乱与蠕动》的名称、规则文本、技能卡文案、界面设计、棋子与地形美术、宣传物料及相关文档，除特别注明外，版权均归开发者 <strong>前进四</strong> 所有。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>使用范围</h2>
+    <ul>
+      <li>本作以单机热座与本地/局域网联机形式提供给玩家游玩，不提供任何形式的商业授权。</li>
+      <li>未经开发者书面许可，不得将本作的代码、美术、文案或规则文本用于商业用途、二次分发或冒充原创发布。</li>
+      <li>欢迎在保留出处与完整版权信息的前提下，进行非商业的实况、直播、截图与规则讨论。</li>
+      <li>游戏内的历史、军事与地理元素均为架空创作，如有雷同纯属巧合。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>技术与第三方组件</h2>
+    <ul>
+      <li>联机服务：<strong>Node.js</strong>（MIT）与 <strong>ws</strong>（MIT）；桌面版基于 <strong>Electron</strong>（MIT），其内置的 <strong>Chromium</strong> 及附带的第三方组件遵循各自的开源许可证。</li>
+      <li>界面字体调用操作系统自带的楷体、黑体等字体，不随本作再分发字体文件。</li>
+      <li>其余自制的棋子、地形贴图、符文标题与界面图形，其版权归开发者所有。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>版本说明</h2>
+    <p>当前应用版本为 <strong>2.1.0</strong>，规则版本为 <strong>v5.6</strong>。2.0.0 新增七部单机战役《权力的泥沼》《凛冬碎骨》《咸水与金币》《安息与提灯》《三城之盟》《圣辉之下》《蛇骨深处》，共 84 关（每部含两关小游戏），含剧情对话、固定蓝方配置、首领与任务目标。1.10.0 新增第十模式「霓虹纪元」：中央数据核心每轮向空格喷出数据包，喷包区开局不可部署，地面单位经过或停留时立即拾取并运回己方终端，回合开始时自动上传，先上传 5 个数据包者接管系统；霓虹步兵 3 费、车 5 费，车限 3 格，基础步兵可直行 2 格；十类可部署单位各带一项科技改装被动，以及每 3 回合轮换、提前 1 回合预警的 6 种公共事件；配套合金数据城战场、专属科技棋子、32 小节四段体霓虹配乐与铜管结束曲。1.9.0 新增第九模式「烽燧阵线」：中央长城与两座关门、三座烽燧的跨墙点燃与邻近控制、每回合 3 指挥点，以及 1/2/3 座烽燧的技能点/攻击/胜利增益，配套夯土边塞战场与中式配乐。1.8.0 新增第八模式「蠕潮蚀野」：潮眼扩张、镇石、斩潮/引潮与潮涌预报，配套夜潮战场美术与深海潮汐配乐；原「皖南事变」更名为「城邦裂变」，阵营固定为斯巴达、雅典与波斯远征军，事变奖励按发起方分支结算，战场与配乐改为希腊城邦风格。正式版将经典、城邦裂变二阶段与蛇骨矿洞的循环曲替换为进行曲版、抒情版与音乐盒版，经典天候联动也改用进行曲版。</p>
+  </section>
+
+  <p class="fine">本页面为《混乱与蠕动》的正式版权页。若你在其他渠道获取到移除本页或篡改开发者信息的副本，请以本页面为准。</p>
+
+  <footer>
+    <span>© 2026 前进四 · 混乱与蠕动</span>
+    <nav><a href="/rules">游玩规则</a><a href="/local">本地热座</a><a href="/">联机大厅</a></nav>
+  </footer>
+</main>
+</body>
+</html>

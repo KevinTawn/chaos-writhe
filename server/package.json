@@ -1,0 +1,13 @@
+{
+  "name": "chaos-writhe-game-server",
+  "version": "2.1.0",
+  "private": true,
+  "description": "混乱与蠕动 · 联机游戏服务器（认证 Ticket / WebSocket / 在线统计）",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  }
+}

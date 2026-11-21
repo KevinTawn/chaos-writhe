@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>混乱与蠕动 · 单机 / 剧情</title>
+    <link rel="stylesheet" href="/client/local/style.css">
+    <link rel="stylesheet" href="/client/codex.css">
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+<canvas id="weather-fx" aria-hidden="true"></canvas>
+<script src="/client/sprite.js"></script>
+<!-- 雪原4：在 body 中添加飘雪容器 -->
+<canvas id="snow-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;display:none;"></canvas>
+<!-- 任务7：模式选择界面 -->
+<div class="mode-select-overlay astro-local" id="modeSelectOverlay">
+  <canvas id="lobby-stars" class="lobby-stars" aria-hidden="true"></canvas>
+  <header class="local-site-top astro-top">
+    <div class="site-mark astro-brand">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg></span>
+      <span class="brand-text"><b>混乱与蠕动</b><span>单机 / 剧情 · 回合制战棋</span></span>
+    </div>
+    <nav class="site-nav astro-nav" aria-label="站点功能">
+      <a class="nav-ico" href="/" id="to-lobby-btn-mode" title="联机大厅"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.3 3.6 5.1 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.1-3.6-8.5S9.6 5.8 12 3.5z"/></svg><span>联机大厅</span></a>
+      <button type="button" class="nav-ico" id="mode-codex-btn" title="战地图鉴"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c2.8-1 5.4-1 8 0v13c-2.6-1-5.2-1-8 0z"/><path d="M20 5.5c-2.8-1-5.4-1-8 0v13c2.6-1 5.2-1 8 0z"/></svg><span>图鉴</span></button>
+      <button type="button" class="nav-ico" id="mode-rules-btn" title="游玩规则"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h8l3 3v14H7z"/><path d="M15 3.5v3h3"/><path d="M10 11h6M10 14.5h6"/></svg><span>规则</span></button>
+      <button type="button" class="nav-ico" id="mode-copyright-btn" title="版权信息"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 10.8v5"/><circle cx="12" cy="8.1" r=".9" fill="currentColor" stroke="none"/></svg><span>版权</span></button>
+      <button type="button" class="nav-ico music-toggle" aria-pressed="true" title="关闭背景音乐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v11"/><ellipse cx="6.8" cy="18" rx="2.6" ry="2"/><ellipse cx="16.8" cy="15" rx="2.6" ry="2"/></svg><span class="music-label">音乐</span></button>
+    </nav>
+  </header>
+  <div class="mode-select-panel">
+    <section class="mode-details" aria-live="polite">
+      <div class="mode-eyebrow"><i aria-hidden="true"></i><span id="local-mode-eyebrow">阵式 壹 · CLASSIC</span></div>
+      <h1 id="local-mode-title">经典模式</h1>
+      <div class="mode-en" id="local-mode-en">CLASSIC</div>
+      <p class="mode-brief" id="local-mode-brief">方寸棋盘上的正面对抗。没有额外规则，只有站位、点数与判断。</p>
+      <ul class="mode-points" id="local-mode-points">
+        <li>55 格标准战场</li><li>双方交替行动</li><li>全灭或第 20 回合判定</li>
+      </ul>
+      <p class="mode-quote" id="local-mode-quote">先学会走路，再谈奇袭。</p>
+      <p class="mode-version">v2.1.0 &nbsp;/&nbsp; 规则 v5.6</p>
+    </section>
+
+    <section class="chart-zone" aria-label="十阵星盘">
+      <div class="wheel">
+        <span class="st-ring r1"></span><span class="st-ring r2"></span><span class="st-ring r3"></span><span class="st-ring r4"></span>
+        <span class="st-ticks"></span><span class="st-ticks inner"></span>
+        <svg class="st-constellation" viewBox="0 0 100 100" aria-hidden="true">
+          <polygon class="web" points="50,10 73.5,17.6 88,37.6 88,62.4 73.5,82.4 50,90 26.5,82.4 12,62.4 12,37.6 26.5,17.6"/>
+          <g class="spokes">
+            <path d="M50 50L50 10M50 50L73.5 17.6M50 50L88 37.6M50 50L88 62.4M50 50L73.5 82.4M50 50L50 90M50 50L26.5 82.4M50 50L12 62.4M50 50L12 37.6M50 50L26.5 17.6"/>
+          </g>
+        </svg>
+        <span class="st-needle" id="local-needle"></span>
+        <div class="st-orb">
+          <span class="halo"></span>
+          <span class="orb-icon" id="local-orb-icon"><svg viewBox="0 0 24 24"><use href="#m-classic"></use></svg></span>
+          <span class="orb-no" id="local-orb-no">壹 / 01</span>
+        </div>
+        <div class="mode-list" id="local-mode-list">
+          <button type="button" class="mode-option" id="mode-classic" data-mode="classic" data-name="经典模式" data-en="CLASSIC" data-no="壹" data-index="01" data-accent="#c79a55" data-brief="方寸棋盘上的正面对抗。没有额外规则，只有站位、点数与判断。" data-points="55 格标准战场|双方交替行动|全灭或第 20 回合判定" data-quote="先学会走路，再谈奇袭。" style="--a:0deg;--neg:0deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-classic"></use></svg></span><span class="mode-name">经典</span><span class="mode-tag">标准对决</span></button>
+          <button type="button" class="mode-option" id="mode-snow" data-mode="snow" data-name="雪原群狼之舞" data-en="SNOWFIELD" data-no="贰" data-index="02" data-accent="#9fc3d4" data-brief="风雪改变车队的步幅，狼群事件在回合之间伏击。" data-points="小雪 / 大雪周期|大雪限制车辆移动|雪原事件与强化版" data-quote="雪落无声，狼群从不走直线。" style="--a:36deg;--neg:-36deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-snow"></use></svg></span><span class="mode-name">雪原</span><span class="mode-tag">风雪与狼群</span></button>
+          <button type="button" class="mode-option" id="mode-wannan" data-mode="wannan" data-name="城邦裂变" data-en="CITY-STATES" data-no="叁" data-index="03" data-accent="#c47f5a" data-brief="斯巴达、雅典与波斯远征军同席。摩擦积满，事变重写战场。" data-points="三方阵营与固定配色|事变奖励按发起方分支|第 12 回合增援" data-quote="同盟是一张写好了日期的纸。" style="--a:72deg;--neg:-72deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-wannan"></use></svg></span><span class="mode-name">城邦</span><span class="mode-tag">斯巴达 / 雅典 / 波斯</span></button>
+          <button type="button" class="mode-option" id="mode-pirate" data-mode="pirate" data-name="海盗港湾" data-en="CORSAIR" data-no="肆" data-index="04" data-accent="#4d9b92" data-brief="海面、栈桥与快艇。风向改变，登船者随浪漂移。" data-points="东风 / 西风漂移|登船与海炮|快艇与漩涡事件" data-quote="风向就是第二套规则。" style="--a:108deg;--neg:-108deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-pirate"></use></svg></span><span class="mode-name">海盗</span><span class="mode-tag">海战与炮火</span></button>
+          <button type="button" class="mode-option" id="mode-fog" data-mode="fog" data-name="雾夜幽乡" data-en="FOG NIGHT" data-no="伍" data-index="05" data-accent="#8b9bb0" data-brief="墓碑在雾里移动，鬼魂只在被照见的格子存在。" data-points="视野迷雾与隐藏单位|撞鬼与凝魂|墓碑会挪动位置" data-quote="你听见的脚步声，不一定来自人。" style="--a:144deg;--neg:-144deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-fog"></use></svg></span><span class="mode-name">雾夜</span><span class="mode-tag">鬼影与墓碑</span></button>
+          <button type="button" class="mode-option" id="mode-holy" data-mode="holy" data-name="圣辉之战" data-en="HOLY RADIANCE" data-no="陆" data-index="06" data-accent="#d9bd78" data-brief="地面与天空同时开战。升空、俯冲、抢占区域，直到圣辉落定。" data-points="双层地图同时可见|龙标与升空 / 俯冲|区域计分与火山喷发" data-quote="抬头之前，先想好怎么落地。" style="--a:180deg;--neg:-180deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-holy"></use></svg></span><span class="mode-name">圣辉</span><span class="mode-tag">天空 / 地面对决</span></button>
+          <button type="button" class="mode-option" id="mode-mine" data-mode="mine" data-name="蛇骨矿洞" data-en="BONE MINE" data-no="柒" data-index="07" data-accent="#9987c2" data-brief="地面之下还有一层矿洞。竖井、晶簇、遗物与守着深处的矿主。" data-points="11×5 独立地下层|2 格视野与岩壁遮挡|晶簇 / 遗物 / 周期塌方" data-quote="灯火照不到的地方，才叫矿洞。" style="--a:216deg;--neg:-216deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-mine"></use></svg></span><span class="mode-name">矿洞</span><span class="mode-tag">双层矿井探索</span></button>
+          <button type="button" class="mode-option" id="mode-tide" data-mode="tide" data-name="蠕潮蚀野" data-en="CREEPING TIDE" data-no="捌" data-index="08" data-accent="#4f9bab" data-brief="潮眼每轮扩张，镇石被一寸寸啃食。斩潮、引潮，或看着阵地沉没。" data-points="潮涌逐轮扩张|斩潮 / 引潮 / 断潮|双镇石与第 20 回合判定" data-quote="潮水不讲道理，只讲方向。" style="--a:252deg;--neg:-252deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-tide"></use></svg></span><span class="mode-name">蠕潮</span><span class="mode-tag">潮眼 / 镇石 / 涌蚀</span></button>
+          <button type="button" class="mode-option" id="mode-beacon" data-mode="beacon" data-name="烽燧阵线" data-en="BEACON LINE" data-no="玖" data-index="09" data-accent="#d4783d" data-brief="一道长城横贯战场，三座烽燧立在墙脊。跨墙、点燃、守住火光。" data-points="三座烽燧 · 两座关门|跨墙点燃耗 1 指挥点|三燧连城立即获胜" data-quote="烽火一起，整条边线都醒了。" style="--a:288deg;--neg:-288deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-beacon"></use></svg></span><span class="mode-name">烽燧</span><span class="mode-tag">长城 / 关门 / 烽燧</span></button>
+          <button type="button" class="mode-option" id="mode-neon" data-mode="neon" data-name="霓虹纪元" data-en="NEON ERA" data-no="拾" data-index="10" data-accent="#45d6c8" data-brief="核心喷出数据包。步兵可直行两格、车辆限速，抢包、护送、拦截，把 5 个包送回己方终端。" data-points="全兵种科技改装|步兵直行两格 / 车辆限速|每 3 回合公共事件" data-quote="代码不会说谎，只会被改写。" style="--a:324deg;--neg:-324deg"><span class="st-disc"><svg class="mode-icon" viewBox="0 0 24 24"><use href="#m-neon"></use></svg></span><span class="mode-name">霓虹</span><span class="mode-tag">数据核心 / 改装 / 事件</span></button>
+        </div>
+      </div>
+      <div class="chart-hint"><b>十阵列位</b> · 悬停预览，点选即开始对局</div>
+    </section>
+
+    <aside class="mode-select-card observatory">
+      <div class="obs-head"><h2>出师点将</h2><span>本地热座 · 双人 / AI</span></div>
+      <div class="obs-sel" id="local-preview-sel"><b>经典模式</b><span>标准对决 · CLASSIC</span></div>
+      <div class="obs-note">点选星位即开始对局。十种战场全部开放，无需联网。</div>
+      <label class="ai-toggle"><input type="checkbox" id="aiOpponentToggle"> 单人练习：蓝方由电脑操作</label>
+      <button type="button" class="big-btn secondary level-entry" id="level-mode-btn">📖 战役关卡 · 剧情模式</button>
+      <p class="mode-footnote">新手可从经典模式开始；圣辉、矿洞与烽燧战场均已开放单机热座。</p>
+      <div class="console-foot"><span>本地热座 · 无需服务器</span><button type="button" class="foot-link" id="mode-copyright-btn-2">版权信息 · 前进四</button></div>
+    </aside>
+  </div>
+</div>
+    <div class="level-radio" id="levelRadio" hidden>
+  <span class="lr-who" id="levelRadioWho">📜 旁白</span>
+  <span class="lr-text" id="levelRadioText"></span>
+</div>
+
+<div class="victory-overlay" id="victoryOverlay"><div class="victory-card"><div class="victory-text" id="victoryText"></div><div class="level-result-actions" id="levelResultActions" hidden></div><div class="victory-actions"><button class="btn" id="victoryRematchBtn">🔁 再来一局（交换先手）</button><button class="btn secondary" id="exportReplayBtn">📄 导出本局记录</button><button class="btn secondary" id="victoryResetBtn">🏆 返回模式选择</button></div></div></div>
+
+<div class="level-select-overlay" id="levelSelectOverlay" hidden>
+  <div class="level-select-panel" role="dialog" aria-modal="true" aria-labelledby="levelSelectTitle">
+    <header class="level-select-head">
+      <div>
+        <span class="level-kicker">蠕动之书 · 战役</span>
+        <h2 id="levelSelectTitle">关卡选择</h2>
+        <p>七部战役，每部十关主线 + 两关支线（小游戏/空投）。红方由你操作，蓝方按每关固定配置布防。</p>
+      </div>
+      <div class="level-head-actions">
+        <button type="button" class="tutorial-level-btn" id="levelTutorialBtn">🎓 新手教程</button>
+        <button type="button" class="level-close" id="levelCloseBtn" aria-label="关闭关卡选择">×</button>
+      </div>
+    </header>
+    <div class="level-mode-tabs" id="levelModeTabs" role="tablist"></div>
+    <div class="level-grid" id="levelGrid"></div>
+    <footer class="level-select-foot">
+      <span id="levelProgressText">已通关 0 / 84</span>
+      <button type="button" class="text-btn" id="levelTutorialFooterBtn">🎓 新手教程</button>
+      <button type="button" class="text-btn" id="levelUnlockAllBtn">解锁全部关卡</button>
+      <button type="button" class="text-btn" id="levelResetProgressBtn">重置进度</button>
+    </footer>
+  </div>
+</div>
+
+<div class="tutorial-select-overlay" id="tutorialSelectOverlay" hidden>
+  <div class="tutorial-select-panel" role="dialog" aria-modal="true" aria-labelledby="tutorialSelectTitle">
+    <header class="tutorial-select-head">
+      <div>
+        <span class="level-kicker">训练场 · 新兵手册</span>
+        <h2 id="tutorialSelectTitle">选择训练科目</h2>
+        <p>两节短课，带你熟悉单位行动与技能卡。</p>
+      </div>
+      <button type="button" class="level-close" id="tutorialSelectClose" aria-label="关闭教程选择">×</button>
+    </header>
+    <div class="tutorial-options" id="tutorialOptions"></div>
+  </div>
+</div>
+
+<div class="tutorial-guide" id="tutorialGuide" hidden>
+  <div class="tutorial-guide-head">
+    <span>🎓 <b id="tutorialGuideTitle">新兵训练</b></span>
+    <button type="button" id="tutorialSkipBtn" aria-label="跳过教程">×</button>
+  </div>
+  <ol class="tutorial-step-list" id="tutorialStepList"></ol>
+  <p class="tutorial-guide-text" id="tutorialGuideText"></p>
+  <button type="button" class="text-btn tutorial-skip-link" id="tutorialSkipLink">跳过教程</button>
+</div>
+
+<div class="tutorial-complete-overlay" id="tutorialCompleteOverlay" hidden>
+  <div class="tutorial-complete-card">
+    <span class="level-kicker">训练完成</span>
+    <h2 id="tutorialCompleteTitle">新兵训练完成</h2>
+    <p id="tutorialCompleteText">你已经掌握了基础操作。</p>
+    <div class="tutorial-complete-actions">
+      <button type="button" class="btn" id="tutorialBackBtn">返回关卡选择</button>
+      <button type="button" class="btn secondary" id="tutorialRetryBtn">再练一次</button>
+    </div>
+  </div>
+</div>
+
+<div class="armory-overlay level-armory-overlay" id="levelArmoryOverlay">
+  <div class="armory-panel">
+    <div class="armory-kicker">🏪 战役补给 · 免费</div>
+    <h2>选择 1 个军火库单位</h2>
+    <p id="levelArmoryHint">本关红方可免费带入 1 个军火库单位，部署时不消耗资源；也可以跳过。</p>
+    <div id="levelArmoryOptions" class="armory-options"></div>
+    <button class="btn secondary" id="levelArmorySkip" type="button">跳过补给</button>
+  </div>
+</div>
+
+<div class="level-story-overlay" id="levelStoryOverlay" hidden>
+  <div class="level-story-panel" role="dialog" aria-modal="true" aria-labelledby="levelStoryName">
+    <div class="level-story-head">
+      <span id="levelStoryKicker">第一关</span>
+      <span id="levelStoryProgress">1 / 4</span>
+    </div>
+    <div class="level-story-portrait-wrap" aria-hidden="true">
+      <div class="level-story-portrait" id="levelStoryPortrait"></div>
+      <span class="level-story-portrait-glow"></span>
+    </div>
+    <div class="level-story-dialogue">
+      <div class="level-story-nameplate">
+        <span class="level-story-avatar" id="levelStoryAvatar" aria-hidden="true">🔥</span>
+        <span class="level-story-name" id="levelStoryName">岚</span>
+        <small class="level-story-title" id="levelStoryTitle"></small>
+      </div>
+      <div class="level-story-text" id="levelStoryText"></div>
+      <div class="level-story-actions">
+        <button type="button" class="text-btn" id="levelStorySkip">跳过剧情</button>
+        <button type="button" class="btn" id="levelStoryNext">继续 ▸</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="armory-overlay" id="armoryOverlay"><div class="armory-panel"><div class="armory-kicker">🏪 军火库 · 开局补给</div><h2 id="armoryTitle">红方军火库</h2><p id="armoryHint">从三个单位中选择一个带入本局，或跳过。选择会记录在日志中。</p><div id="armoryOptions" class="armory-options"></div><button class="btn secondary" id="armorySkipBtn" type="button">跳过军火库</button></div></div>
+<div id="wannanIncidentOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(8,10,18,.8);align-items:center;justify-content:center;padding:16px;">
+  <div style="max-width:460px;width:100%;background:#1d2230;border:1px solid #5a4a2a;border-radius:14px;padding:22px;color:#f3e8cf;box-shadow:0 20px 60px rgba(0,0,0,.55);">
+    <div style="font-size:13px;letter-spacing:.18em;color:#d8b45a;margin-bottom:6px;">⚡ 城邦裂变</div>
+    <h2 id="wannanIncidentTitle" style="margin:0 0 10px;">是否点燃城邦裂变？</h2>
+    <p id="wannanIncidentText" style="line-height:1.7;color:#d8d2c4;margin:0 0 18px;"></p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="btn secondary" id="wannanIncidentDecline" type="button">暂不发动（摩擦+1）</button>
+      <button class="btn" id="wannanIncidentAccept" type="button">发动城邦裂变</button>
+    </div>
+  </div>
+</div>
+<div class="draw-overlay" id="drawOverlay">
+  <div class="draw-peek-banner" id="drawPeekBanner"><span>查看战场中 · <b id="drawPeekCount">5</b>s</span><button class="btn" id="drawPeekBack" type="button">返回抽卡</button></div>
+  <div class="draw-card-panel">
+    <h2 style="color:#ffd966; margin-bottom:12px;">选择一张技能卡加入牌库</h2>
+    <div class="draw-meta"><span class="draw-sp">己方技能点 <b id="drawSpText">⚡10</b></span><button class="peek-btn" id="drawPeekBtn" type="button">👁 查看战场（5s）</button><button class="peek-btn" id="rerollDrawBtn" type="button" style="display:none;">🔄 换一批</button></div>
+    <div id="drawCardPanel" style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;"></div>
+    <button class="btn" id="cancelDrawBtn" style="margin-top:20px;">取消</button>
+  </div>
+</div>
+<div class="target-hint" id="targetHint"><span id="targetHintText">选择目标</span><button class="btn" id="finishTargetBtn" style="display:none">完成选择</button><button class="btn" id="cancelTargetBtn" style="margin-left:15px;">取消</button></div>
+<div class="card-help-overlay" id="cardHelpOverlay"><div class="card-help-panel"><div class="card-help-kicker">📖 技能卡详情</div><h2 id="cardHelpTitle">技能卡</h2><div class="card-help-meta" id="cardHelpMeta"></div><p class="card-help-desc" id="cardHelpDesc"></p><p class="card-help-note" id="cardHelpNote"></p><div class="card-help-keywords" id="cardHelpKeywords"></div><button class="btn" id="cardHelpClose">关闭</button></div></div>
+<div class="card-help-overlay weather-overlay" id="weatherOverlay"><div class="card-help-panel weather-panel" role="dialog" aria-modal="true" aria-labelledby="weatherTitle"><div class="card-help-kicker">🌤️ 天候</div><h2 id="weatherTitle">天候</h2><div class="weather-detail" id="weatherDetail"></div><button class="btn" id="weatherClose">关闭</button></div></div>
+
+<div class="game-container">
+    <div class="game-topbar">
+        <div class="room"><span class="label">作 战 室</span><span class="code" id="local-mode-label">—</span></div>
+        <div class="game-top-actions">
+            <span class="conn-dot online">本地热座 · 双人 / AI</span>
+            <button class="mini-btn music-toggle" type="button" aria-pressed="true" title="关闭背景音乐">♪ <span class="music-label">音乐</span></button>
+            <button type="button" class="mini-btn" id="to-campaign-btn">剧情模式</button>
+            <button class="mini-btn" id="codex-btn">图鉴</button>
+            <button class="mini-btn" id="rules-btn">规则</button>
+            <button class="mini-btn" id="exit-local-btn">退出</button>
+        </div>
+    </div>
+    <div class="hud">
+        <div class="faction red" id="hud-red">
+            <div class="red-info"><span class="faction-crest" aria-hidden="true"></span><span class="faction-name">红方</span><span class="stat-chip res">💰<b id="red-res">40</b></span><span class="stat-chip cmd">🎯<b id="red-cmd">2</b></span><span class="stat-chip sp">⚡<b id="red-sp">10</b></span><span class="stat-chip soul">💀<b id="red-soul">0</b></span></div>
+        </div>
+        <div class="round">
+            <span class="r-no" id="round-no">布 阵</span>
+            <span class="r-phase" id="phase-text">🛒 红方部署</span>
+            <div class="level-hud" id="levelHud" hidden>
+                <span class="lh-name" id="levelHudName">第一关</span>
+                <span class="lh-task" id="levelHudTask">任务</span>
+                <span class="lh-progress" id="levelHudProgress"></span>
+      <button type="button" class="btn small" id="levelActionBtn" hidden></button>
+            </div>
+            <button type="button" class="weather-chip" id="weather-chip" style="display:none;" aria-label="查看天候详情"></button>
+            <div class="round-tools">
+                <button class="view-cards-btn" id="view-cards-btn" style="display:none;">📋</button>
+                <button class="view-mines-btn" id="view-mines-btn" style="display:none;">💣</button>
+                <button class="view-enemy-btn" id="view-enemy-btn" style="display:none;">🔍</button>
+                <button class="view-cards-btn" id="ghost-view-btn" style="display:none;">👻</button>
+            </div>
+        </div>
+        <div class="faction blue" id="hud-blue">
+            <div class="blue-info"><span class="faction-crest" aria-hidden="true"></span><span class="faction-name">蓝方</span><span class="stat-chip res">💰<b id="blue-res">40</b></span><span class="stat-chip cmd">🎯<b id="blue-cmd">2</b></span><span class="stat-chip sp">⚡<b id="blue-sp">10</b></span><span class="stat-chip soul">💀<b id="blue-soul">0</b></span></div>
+        </div>
+    </div>
+    <div class="game-main"><div class="stage">
+    <div class="map-stack">
+      <div class="sky-map" id="sky-map" hidden>
+        <div class="map-label sky-label"><span>☁️ 天空</span><span class="map-note">点击天空格移动 / 攻击 / 俯冲</span></div>
+        <div class="battlefield sky-battlefield"><div class="world sky-world"><div class="terrain sky-terrain" aria-hidden="true"></div><div class="edgefade sky-edgefade" aria-hidden="true"></div><div id="sky-grid" class="grid"></div></div></div>
+      </div>
+      <div class="mine-map" id="mine-map" hidden>
+        <div class="map-label mine-label"><span>⛏️ 矿洞</span><span class="map-note" id="mine-vision-label">视野 2 格 · 岩壁阻挡视线</span></div>
+        <div class="battlefield mine-battlefield"><div class="world mine-world"><div class="terrain mine-terrain" aria-hidden="true"></div><div class="edgefade mine-edgefade" aria-hidden="true"></div><div id="mine-grid" class="grid"></div></div></div>
+      </div>
+    <div class="ground-map">
+    <div class="map-label ground-label" id="ground-label" hidden>🌋 地面</div>
+    <div class="battlefield ground-battlefield"><div class="world"><div class="terrain" aria-hidden="true"></div><div class="edgefade" aria-hidden="true"></div><div class="props" aria-hidden="true">
+            <div class="wall3d"></div>
+            <div class="tree3d t1"></div>
+            <div class="tree3d t2"></div>
+            <div class="tree3d t3"></div>
+            <div class="tree3d t4"></div>
+            <div class="tree3d t5"></div>
+            <div class="tree3d t6"></div>
+            <div class="beacon-props">
+              <svg class="bprop bp-rack-left" viewBox="0 0 120 120"><use href="#prop-rack"></use></svg>
+              <svg class="bprop bp-rack-right" viewBox="0 0 120 120"><use href="#prop-rack"></use></svg>
+              <svg class="bprop bp-shields" viewBox="0 0 110 100"><use href="#prop-shields"></use></svg>
+              <svg class="bprop bp-crates" viewBox="0 0 110 100"><use href="#prop-crates"></use></svg>
+              <svg class="bprop bp-barricade" viewBox="0 0 120 90"><use href="#prop-barricade"></use></svg>
+              <svg class="bprop bp-drum" viewBox="0 0 90 100"><use href="#prop-drum"></use></svg>
+              <svg class="bprop bp-banner-left" viewBox="0 0 80 150"><use href="#prop-banner"></use></svg>
+              <svg class="bprop bp-banner-right" viewBox="0 0 80 150"><use href="#prop-banner"></use></svg>
+              <span class="bp-brazier bp-brazier-left"><svg viewBox="0 0 80 90"><use href="#prop-brazier"></use></svg><i class="bp-flame"></i><i class="bp-flame bp-flame-2"></i></span>
+              <span class="bp-brazier bp-brazier-right"><svg viewBox="0 0 80 90"><use href="#prop-brazier"></use></svg><i class="bp-flame"></i><i class="bp-flame bp-flame-2"></i></span>
+              <span class="beacon-embers"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            </div>
+            <div class="volcano3d" aria-hidden="true">
+          <svg viewBox="0 0 320 260">
+            <defs>
+              <linearGradient id="vRock" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6a5c47"/>
+                <stop offset=".22" stop-color="#4c4234"/>
+                <stop offset=".62" stop-color="#2e2821"/>
+                <stop offset="1" stop-color="#0f0c09"/>
+              </linearGradient>
+              <linearGradient id="vLeft" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#b39a72" stop-opacity=".34"/>
+                <stop offset=".42" stop-color="#b39a72" stop-opacity=".06"/>
+                <stop offset="1" stop-color="#b39a72" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="vRight" x1="0" y1="0" x2="1" y2="0">
+                <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+                <stop offset="1" stop-color="#000" stop-opacity=".5"/>
+              </linearGradient>
+              <radialGradient id="vGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0" stop-color="#ffd08a" stop-opacity=".95"/>
+                <stop offset=".4" stop-color="#ff7a24" stop-opacity=".6"/>
+                <stop offset="1" stop-color="#ff4a00" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="vBlur" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="8"/></filter>
+              <filter id="vSoft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter>
+              <filter id="vNoise" x="0" y="0" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="4" seed="17" result="n"/>
+                <feColorMatrix in="n" type="saturate" values="0"/>
+                <feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer>
+              </filter>
+              <clipPath id="vClip"><path d="M4 240 C 50 236 82 206 106 158 C 122 124 136 102 142 92 L 178 92 C 184 102 198 124 214 158 C 238 206 270 236 316 240 Z"/></clipPath>
+            </defs>
+            <ellipse cx="160" cy="242" rx="150" ry="20" fill="#000" opacity=".55" filter="url(#vBlur)"/>
+            <ellipse cx="160" cy="234" rx="128" ry="26" fill="#170f0a" opacity=".6" filter="url(#vBlur)"/>
+            <g clip-path="url(#vClip)">
+              <path d="M4 240 C 50 236 82 206 106 158 C 122 124 136 102 142 92 L 178 92 C 184 102 198 124 214 158 C 238 206 270 236 316 240 Z" fill="url(#vRock)"/>
+              <rect x="0" y="86" width="320" height="160" filter="url(#vNoise)" opacity=".5" style="mix-blend-mode:overlay"/>
+              <path d="M4 240 C 50 236 82 206 106 158 C 122 124 136 102 142 92 L 156 92 L 132 240 Z" fill="url(#vLeft)"/>
+              <path d="M178 92 C 184 102 198 124 214 158 C 238 206 270 236 316 240 L 212 240 Z" fill="url(#vRight)"/>
+              <g fill="none" stroke-linecap="round">
+                <path d="M118 210 C 130 188 138 162 144 132" stroke="#8d7a5c" stroke-width="3.2" opacity=".25"/>
+                <path d="M104 224 C 116 204 124 180 130 152" stroke="#0a0806" stroke-width="4" opacity=".28"/>
+                <path d="M132 204 C 140 184 146 164 150 142" stroke="#6d5e48" stroke-width="2.4" opacity=".3"/>
+                <path d="M190 204 C 184 182 178 160 174 136" stroke="#0a0806" stroke-width="4" opacity=".3"/>
+                <path d="M204 220 C 198 198 194 176 192 152" stroke="#5d5140" stroke-width="2.4" opacity=".26"/>
+                <path d="M90 224 C 104 220 120 222 136 230" stroke="#0a0806" stroke-width="3" opacity=".25"/>
+                <path d="M224 220 C 210 216 194 218 180 226" stroke="#0a0806" stroke-width="3" opacity=".25"/>
+                <path d="M74 230 C 96 224 120 226 142 234" stroke="#7d6b50" stroke-width="2" opacity=".22"/>
+              </g>
+              <g fill="none" stroke-linecap="round">
+                <path d="M150 104 C 145 134 136 164 120 196" stroke="#ff6a1a" stroke-width="14" opacity=".22" filter="url(#vSoft)"/>
+                <path d="M150 104 C 145 134 136 164 120 196" stroke="#ff7a24" stroke-width="6.4"/>
+                <path d="M150 104 C 145 134 136 164 120 196" stroke="#ffcf7a" stroke-width="2.1" opacity=".9"/>
+                <path d="M150 104 C 145 134 136 164 120 196" stroke="#ff7a24" stroke-width="2" opacity=".8"/>
+                <path d="M161 106 C 164 144 171 184 184 222" stroke="#ff6a1a" stroke-width="13" opacity=".2" filter="url(#vSoft)"/>
+                <path d="M161 106 C 164 144 171 184 184 222" stroke="#ff7a24" stroke-width="5.4"/>
+                <path d="M161 106 C 164 144 171 184 184 222" stroke="#ffcf7a" stroke-width="1.9" opacity=".85"/>
+                <path d="M172 102 C 182 126 194 150 208 176" stroke="#ff6a1a" stroke-width="10" opacity=".2" filter="url(#vSoft)"/>
+                <path d="M172 102 C 182 126 194 150 208 176" stroke="#ff7a24" stroke-width="3.8"/>
+                <path d="M137 108 C 128 128 118 144 106 158" stroke="#ff6a1a" stroke-width="7" opacity=".18" filter="url(#vSoft)"/>
+                <path d="M137 108 C 128 128 118 144 106 158" stroke="#ff7a24" stroke-width="2.6"/>
+              </g>
+              <g fill="#ff8a2a">
+                <circle cx="120" cy="196" r="2.2" opacity=".8"/>
+                <circle cx="184" cy="222" r="2" opacity=".7"/>
+                <circle cx="106" cy="158" r="1.6" opacity=".7"/>
+              </g>
+            </g>
+            <path d="M4 240 C 50 236 82 206 106 158 C 122 124 136 102 142 92 L 178 92 C 184 102 198 124 214 158 C 238 206 270 236 316 240" fill="none" stroke="#0a0806" stroke-opacity=".5" stroke-width="2"/>
+            <path d="M108 156 C 124 122 136 102 142 92" fill="none" stroke="#b9a27a" stroke-opacity=".22" stroke-width="2"/>
+            <ellipse cx="160" cy="92" rx="34" ry="10.5" fill="#20130c"/>
+            <ellipse cx="160" cy="92" rx="28" ry="8.2" fill="#351d0e"/>
+            <ellipse cx="160" cy="92" rx="22" ry="5.8" fill="url(#vGlow)"/>
+            <ellipse cx="160" cy="92" rx="12" ry="3.4" fill="#ffb45a" opacity=".92" filter="url(#vSoft)"/>
+            <g class="v-smoke" fill="#b6ada0" opacity=".34" filter="url(#vBlur)">
+              <ellipse cx="145" cy="66" rx="38" ry="17"/>
+              <ellipse cx="178" cy="43" rx="29" ry="14"/>
+              <ellipse cx="151" cy="21" rx="21" ry="11"/>
+            </g>
+            <g fill="#ff8a2a">
+              <circle cx="140" cy="84" r="1.7" opacity=".8"/>
+              <circle cx="181" cy="88" r="1.4" opacity=".7"/>
+              <circle cx="156" cy="78" r="1.2" opacity=".8"/>
+            </g>
+          </svg>
+          </div></div><div id="battle-grid" class="grid"></div></div></div></div></div>
+    <div class="actionbar">
+        <div class="deploy-panel" id="deploy-panel">
+            <button class="deploy-btn" data-type="步兵"><span class="btn-icon">⚔️</span> 步兵 2费</button>
+            <button class="deploy-btn" data-type="车"><span class="btn-icon">🐎</span> 车 6费</button>
+            <button class="deploy-btn" data-type="炮兵"><span class="btn-icon">💣</span> 炮兵 4费</button>
+            <button class="deploy-btn" data-type="地雷"><span class="btn-icon">💥</span> 地雷 3费</button>
+            <button class="deploy-btn" data-type="后勤兵"><span class="btn-icon">🛠️</span> 后勤兵 3费</button>
+            <button class="deploy-btn" data-type="防御工事"><span class="btn-icon">🏗️</span> 防御工事 1费</button>
+            <button class="deploy-btn" id="armory-deploy-btn" style="display:none;"></button>
+            <button class="deploy-btn remove-mode" id="remove-mode-btn"><span class="btn-icon">🗑️</span> 拆除模式</button>
+            <button class="deploy-btn done" id="deploy-done-btn">✅ 完成部署</button>
+        </div>
+        <div class="actions-row">
+            <div class="action-buttons">
+                <button class="btn" id="draw-btn" style="display:none;">🎴 抽卡</button>
+                <button class="btn" id="use-card-btn" style="display:none;">✨ 用卡</button>
+                <button class="btn" id="play-card-btn" style="display:none;">▶️ 打出</button>
+                <button class="btn" id="start-action-btn" style="display:none;">⚔️ 行动</button>
+                <button class="btn" id="tide-purge-btn" style="display:none;">🌊 斩潮</button>
+                <button class="btn" id="tide-mark-btn" style="display:none;">🌀 引潮</button>
+                <button class="btn" id="end-turn-btn" disabled>⏭️ 结束回合</button>
+                <button class="btn" id="fog-next-btn" style="display:none;">🌫️ 下一回合</button>
+                <button class="btn" id="wannan-next-btn" style="display:none;">🏛️ 下一回合</button>
+                <button class="btn" id="cancel-btn">❌ 取消</button>
+                <button class="btn" id="undo-btn" disabled>↩️ 悔棋</button>
+                <button class="btn" id="reset-btn">🔄 新局</button>
+                <button class="btn" id="debug-mode-btn">🔧 调试模块</button>
+            </div>
+            <div class="actions-right">
+                <span class="hint" id="action-hint"></span>
+                <button class="btn-danger" id="surrender-btn">🏳️ 投降</button>
+            </div>
+        </div>
+    </div>
+    </div><!-- /stage -->
+    <aside class="rail">
+        <div class="card-library-container">
+            <div class="library-wrap rail-block">
+                <div class="rail-head"><span class="library-label">红 方 牌 库</span><span id="red-library-count">0 张</span></div>
+                <div class="card-library red-library" id="red-library"></div>
+            </div>
+            <div class="library-wrap rail-block">
+                <div class="rail-head"><span class="library-label">蓝 方 牌 库</span><span id="blue-library-count">0 张</span></div>
+                <div class="card-library blue-library" id="blue-library"></div>
+            </div>
+        </div>
+        <section class="rail-block log-block">
+            <div class="rail-head">战 报<span>实时</span></div>
+            <div class="log-container" id="log-panel" aria-live="polite"></div>
+        </section>
+    </aside>
+    </div><!-- /game-main -->
+</div>
+<div class="debug-panel" id="debug-panel">
+    <div class="debug-section">
+        <h4>添加技能卡</h4>
+        <select id="debug-card-select"></select>
+        <button id="debug-add-red">给红方</button>
+        <button id="debug-add-blue">给蓝方</button>
+    </div>
+    <div class="debug-section">
+        <h4>部署单位</h4>
+        <select id="debug-unit-type">
+            <option value="步兵">步兵</option>
+            <option value="车">车</option>
+            <option value="炮兵">炮兵</option>
+            <option value="海炮">海炮（海盗）</option>
+            <option value="地雷">地雷</option>
+            <option value="后勤兵">后勤兵</option>
+            <option value="防御工事">防御工事</option>
+            <option value="二阶步兵">二阶步兵</option>
+            <option value="排雷兵">排雷兵</option>
+            <option value="掷弹兵">掷弹兵</option>
+            <option value="工兵">工兵</option>
+            <option value="双发炮兵">双发炮兵</option>
+            <option value="装甲车">装甲车</option>
+            <option value="补给车">补给车</option>
+            <option value="二阶战车">二阶战车</option>
+            <option value="指挥车">指挥车</option>
+        </select>
+        <select id="debug-unit-side">
+            <option value="red">红方</option>
+            <option value="blue">蓝方</option>
+        </select>
+        <button id="debug-deploy-mode">部署模式（点击棋盘）</button>
+        <span class="debug-tip">矿洞模式可点矿洞格直接部署</span>
+    </div>
+    <div class="debug-section">
+        <h4>添加永久属性</h4>
+        <button data-debug-buff="elite_infantry">精锐步兵</button>
+        <button data-debug-buff="elite_chariot">精锐战车</button>
+        <button data-debug-buff="elite_artillery">精锐炮兵</button>
+        <button data-debug-buff="mine_resist">地雷抗性</button>
+        <button data-debug-buff="minesweeper">排雷兵</button>
+        <button data-debug-buff="trap">工程陷阱</button>
+        <button data-debug-buff="armored">装甲车</button>
+        <button data-debug-buff="battle_damaged">战损车</button>
+    </div>
+    <div class="debug-section">
+        <h4>单位操作</h4>
+        <select id="debug-target-unit"><option value="">选择任意战场单位</option></select>
+        <button id="debug-add-chaos">加一层混乱</button>
+        <button id="debug-remove-chaos">解除一层混乱</button>
+        <button id="debug-remove-unit">移除选中单位</button>
+        <button id="debug-remove-all-buffs">清除所有属性</button>
+    </div>
+
+    <div class="debug-section" id="debug-classic-section" data-debug-mode="classic">
+        <h4>经典 · 天候</h4>
+        <button data-debug-weather="clear">☀️ 晴朗</button>
+        <button data-debug-weather="overcast">☁️ 阴天</button>
+        <button data-debug-weather="breeze">🍃 微风</button>
+        <button data-debug-weather="drizzle">🌦️ 细雨</button>
+        <button data-debug-weather="mist">🌫️ 薄雾</button>
+    </div>
+
+    <div class="debug-section" id="debug-snow-section" data-debug-mode="snow">
+        <h4>雪原 · 天候</h4>
+        <button data-debug-weather="snow1">🌨️ 小雪</button>
+        <button data-debug-weather="snow2">❄️ 大雪</button>
+        <h4>雪原公共事件</h4>
+        <button id="debug-snow-event-1">大雪封路</button>
+        <button id="debug-snow-event-2">腹背受敌</button>
+        <button id="debug-snow-event-3">寒意腾涌</button>
+        <button id="debug-snow-event-4">初阳普照</button>
+        <button id="debug-snow-event-5">另起炉灶</button>
+        <button id="debug-snow-event-6">群狼长啸</button>
+    </div>
+
+    <div class="debug-section" id="debug-pirate-section" data-debug-mode="pirate">
+        <h4>海盗 · 风向</h4>
+        <button data-debug-wind="1">🌬️ 东风</button>
+        <button data-debug-wind="-1">🌬️ 西风</button>
+        <button id="debug-pirate-drift">触发顺风漂移</button>
+        <h4>海盗公共事件</h4>
+        <button id="debug-pirate-event-1">怒涛霜雪</button>
+        <button id="debug-pirate-event-2">巨炮铿轰</button>
+        <button id="debug-pirate-event-3">淬钢成艇</button>
+        <button id="debug-pirate-event-4">海怪来袭</button>
+    </div>
+
+    <div class="debug-section" id="debug-fog-section" data-debug-mode="fog">
+        <h4>雾夜幽乡 · 昼夜</h4>
+        <button id="debug-fog-night">强制雾夜</button>
+        <button id="debug-fog-dawn">强制初晖</button>
+        <button id="debug-fog-auto">恢复自动</button>
+        <h4>雾夜幽乡 · 墓地</h4>
+        <button id="debug-fog-grave-add">墓碑 +1</button>
+        <button id="debug-fog-grave-remove">墓碑 -1</button>
+        <button id="debug-fog-spawn">召唤鬼魂</button>
+    </div>
+
+    <div class="debug-section" id="debug-wannan-section" data-debug-mode="wannan">
+        <h4>城邦裂变 · 事变</h4>
+        <button data-debug-wannan-incident="red">斯巴达发动事变</button>
+        <button data-debug-wannan-incident="blue">雅典发动事变</button>
+        <button id="debug-wannan-friction">摩擦 +1</button>
+        <h4>城邦裂变 · 波斯远征军</h4>
+        <button id="debug-wannan-imperial">波斯远征军增援1个精锐步兵</button>
+    </div>
+
+    <div class="debug-section" id="debug-holy-section" data-debug-mode="holy">
+        <h4>圣辉 · 计分</h4>
+        <button data-debug-holy-score="red">红方 +1 分</button>
+        <button data-debug-holy-score="blue">蓝方 +1 分</button>
+        <button id="debug-holy-check">终局判定</button>
+        <h4>圣辉 · 天空与火山</h4>
+        <button id="debug-holy-dragon-mark">刷新龙标</button>
+        <button id="debug-holy-grant-dragon">选中单位附龙</button>
+        <button id="debug-holy-warning">预告火山喷发</button>
+        <button id="debug-holy-erupt">立即火山喷发</button>
+        <button id="debug-holy-reinforce">触发追赶增援</button>
+    </div>
+
+    <div class="debug-section" id="debug-mine-section" data-debug-mode="mine">
+        <h4>蛇骨矿洞 · 塌方</h4>
+        <button id="debug-mine-cavein-schedule">安排塌方</button>
+        <button id="debug-mine-cavein">立即塌方</button>
+        <h4>蛇骨矿洞 · 矿区</h4>
+        <button id="debug-mine-shaft">开启中央竖井</button>
+        <button id="debug-mine-boss">击败矿主</button>
+        <button id="debug-mine-pickups">恢复晶簇/遗物</button>
+        <button id="debug-mine-reveal">本回合全视野</button>
+        <button id="debug-mine-beasts">矿兽立即行动</button>
+        <button data-debug-mine-spawn="beast">生成矿兽</button>
+        <button data-debug-mine-spawn="guard">生成骨蛇守卫</button>
+    </div>
+
+    <button id="debug-exit">退出调试</button>
+</div>
+
+
+<div id="rulesPopup" class="rules-popup" role="dialog" aria-modal="true" aria-labelledby="rulesTitle" style="display:none;">
+    <div class="rules-panel">
+        <span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span>
+        <span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span>
+        <button id="rulesCloseBtn" class="rules-close" type="button" aria-label="关闭">&times;</button>
+        <p class="rules-kicker">Rules &amp; Reference</p>
+        <h2 class="rules-title" id="rulesTitle">游玩规则</h2>
+        <p class="rules-sub">混乱与蠕动 · 规则版本 v5.6</p>
+        <div class="rules-content" id="rulesContent">
+<h1>混乱与蠕动 · 游玩规则（v5.6）</h1>
+<p>欢迎来到《混乱与蠕动》！这是一款回合制战棋策略游戏，支持 <strong>11×5</strong> 多模式对战。双方共用一台设备轮流行动，部分模式会有第三方 AI 阵营。本规则涵盖当前版本的完整内容。<strong>v1.2.0 起，每局排兵布阵前先经过「军火库」补给环节。</strong></p>
+<hr>
+
+<h2>一、开始游戏</h2>
+<h3>1. 选择模式</h3>
+<p>联机与单机热座均开放全部 <strong>10 种模式</strong>；圣辉之战、蛇骨矿洞、蠕潮蚀野、烽燧阵线与霓虹纪元均可在单机热座中游玩：</p>
+<table><tbody>
+<tr><th>模式</th><th>图标</th><th>特点</th></tr>
+<tr><td>经典模式</td><td>⚔️</td><td>标准对战，11×5 棋盘，适合熟悉基础规则</td></tr>
+<tr><td>雪原群狼之舞</td><td>🐺</td><td>每 3n+1 回合触发随机公共事件</td></tr>
+<tr><td>城邦裂变</td><td>🏛️</td><td><strong>三方混战</strong>：斯巴达（红）、雅典（蓝）、AI 波斯远征军，含事变触发机制</td></tr>
+<tr><td>海盗港湾</td><td>🏴‍☠️</td><td><strong>快艇登船、海水、海炮、船只相撞、据点与海洋事件</strong></td></tr>
+<tr><td>雾夜幽乡</td><td>🌫️</td><td><strong>第三方鬼阵营：墓碑、鬼魂、撞鬼、凝魂与执灯</strong></td></tr>
+<tr><td>圣辉之战</td><td>✝️</td><td>天空/地面分层、龙属性、区域奖励</td></tr>
+<tr><td>蛇骨矿洞</td><td>⛏️</td><td>地面/矿洞分层、视野盲区、挖矿奖励、矿主与塌方</td></tr>
+<tr><td>蠕潮蚀野</td><td>🌊</td><td><strong>共同威胁</strong>：潮眼每回合扩张，镇石与斩潮/引潮，潮涌与回合上限</td></tr>
+<tr><td>烽燧阵线</td><td>🔥</td><td><strong>长城争夺</strong>：中央城墙与两座关门，跨墙点燃并控制三座烽燧者获胜</td></tr>
+<tr><td>霓虹纪元</td><td>🛰️</td><td><strong>数据包偷运</strong>：全兵种科技改装、公共事件，步兵可直行两格、车辆限速，抢包送回终端，先上传 5 个者接管系统</td></tr>
+</tbody></table>
+
+<h3>1.5 关卡战役（单机模式）</h3>
+<p>单机模式首页新增「📖 战役关卡」入口。2.0 战役包含七部、每部十二关，共 <strong>84 关</strong>：《权力的泥沼》（经典）、《凛冬碎骨》（雪原）、《咸水与金币》（海盗）、《安息与提灯》（雾夜）、《三城之盟》（城邦）、《圣辉之下》（圣辉）、《蛇骨深处》（矿洞）。每关有独立的<strong>剧情对话</strong>、<strong>固定蓝方配置</strong>与<strong>任务目标</strong>：</p>
+<ul>
+<li>红方由人类玩家操作；蓝方按该关固定兵种分组与阵型布防（含首领、精锐、战损车、装甲车、双发炮兵、排雷兵、陷阱工事、海炮），不经过军火库，也不需要手动部署。</li>
+<li>进入关卡先播放开场剧情（人物、对白、进度），可跳过；局内会在首次击杀、击杀首领、指定角色受击、特定回合等时点弹出战场通讯；战后还有结算对白。</li>
+<li>任务类型包括：全灭、坚守指定回合、击杀指定兵种或精锐、击杀首领、护送/保护指定单位、占领中心或据点、伤亡上限、摧毁墓碑、累积凝魂、诱敌踩鬼、拆除工事、阻止敌人登岸；部分关卡带回合时限，超时或保护目标阵亡即失败。</li>
+<li>通关会写入本地进度并解锁同战役的下一关；失败可重试本关。终局浮层提供「下一关 / 再打一次 / 返回关卡选择」。</li>
+<li>战役只使用经典、雪原、海盗、雾夜四种战场；其余六种模式仍在普通单机热座与联机版中开放。关卡进度保存在本机浏览器。</li>
+</ul>
+
+<h3>2. 军火库（v1.2.0 新增）</h3>
+<p>正式排兵布阵前，双方先进入<strong>军火库</strong>。每方随机获得 <strong>3 个军火库单位</strong>（<strong>2 个低档 + 1 个高档</strong>）；双方的低档组合与高档单位不会完全相同。可以从三个单位中<strong>购买 1 个或跳过</strong>，选择会写入公开日志；双方都完成选择后才进入部署阶段。</p>
+<ul>
+<li>购买的单位会成为部署选项，<strong>每方限部署 1 个</strong>，部署时正常扣除资源；未部署则作废。</li>
+<li>军火库单位计入"至少部署 1 个可作战单位"的条件。</li>
+<li>军火库单位沿用原兵种的行动方式，并由特殊属性提供额外能力。</li>
+</ul>
+<table><tbody>
+<tr><th>档次</th><th>单位</th><th>图标</th><th>费用</th><th>特点</th></tr>
+<tr><td rowspan="5">低档</td><td>二阶步兵</td><td>⚔️</td><td>4</td><td>❤️2/2 的步兵；HP≥2 时攻击 +1、受击时攻击方点数 -1；首次受伤后降为普通步兵。</td></tr>
+<tr><td>排雷兵</td><td>🛡️</td><td>4</td><td>显示周围 3×3 格内敌方地雷（<strong>包括伪装地雷</strong>）；踩雷时 1 自己混乱、2–6 无事。</td></tr>
+<tr><td>掷弹兵</td><td>⚔️（副💣）</td><td>4</td><td>每局一次：与己方单位相邻时，可轰击该友军<strong>正后方直线</strong>上最近的一个敌军，<strong>不限距离</strong>；地形或友军会阻挡这条线。</td></tr>
+<tr><td>工兵</td><td>🛠️（副🏗️）</td><td>4</td><td>点击工兵自身格进入建造模式：消耗 1 行动在相邻空格建造防御工事；也可移动到相邻敌方工事/地雷格并拆除。建造模式只有选中工兵时才显示紫色高亮，点击其他格或取消即退出。</td></tr>
+<tr><td>双发炮兵</td><td>💣</td><td>5</td><td>作为炮兵拥有 <strong>2 次</strong>炮击次数；用尽后按炮兵规则变为步兵。</td></tr>
+<tr><td rowspan="4">高档</td><td>装甲车</td><td>🐎</td><td>7</td><td>车，带装甲属性；可抵消一次战斗判定，受击时攻击方点数 -1。</td></tr>
+<tr><td>补给车</td><td>🚚</td><td>8</td><td>车，可消耗 1 行动消除<strong>上下左右相邻</strong>己方单位 1 层混乱。</td></tr>
+<tr><td>二阶战车</td><td>🐎</td><td>8</td><td>❤️2/2 的车；首次非直接受伤后降为普通车并清除混乱。</td></tr>
+<tr><td>指挥车</td><td>🎖️</td><td>8</td><td>在场时己方所有单位<strong>最终攻击点数 +1</strong>；被消灭时己方所有单位 +1 混乱，<strong>3 回合后</strong>消去。</td></tr>
+</tbody></table>
+<p>技能卡「排雷兵」（19）与「掷弹兵」（85）会给普通步兵附加与军火库单位相同的属性。</p>
+
+<h3>3. 部署部队</h3>
+<ul>
+<li>双方各有 <strong>40 资源💰</strong>（圣辉之战为 <strong>30 资源</strong>），在部署阶段购买并放置单位。单机热座为红方先部署、蓝方后部署；<strong>联机模式双方同时部署</strong>，部署阶段看不到对方单位，双方都完成后统一开局（地雷对对方仍然隐藏）。</li>
+<li>在军火库中购买的单位会作为额外部署选项出现，<strong>每方限部署 1 个</strong>。</li>
+<li>只能部署在<strong>己方阵地</strong>的空格中（各模式阵地范围不同，见各模式说明）。</li>
+<li>每方最多部署 <strong>1 个后勤兵</strong>。</li>
+<li>每方至少部署 1 个可作战单位后才能点击"完成部署"；地雷和防御工事不计入。</li>
+<li>拆除模式可撤销部署并全额返还资源。</li>
+<li>海盗港湾的<strong>快艇生成点不能初始部署</strong>。</li>
+</ul>
+
+<h2>二、每回合流程（重要：抽卡规则已更新）</h2>
+<p>每个己方回合按以下顺序进行，<strong>抽卡不是强制的，也可以连续抽多次</strong>：</p>
+<ol>
+<li><strong>🎴 抽卡（可选）</strong>：点击抽卡，从 3 张随机技能卡中选 1 张购买，消耗技能点⚡。买完可以<strong>再次点击抽卡</strong>继续三选一，直到技能点不足。三张都买不起时才会出现"取消"按钮。</li>
+<li><strong>✨ 用卡（可选）</strong>：从牌库中选择 1 张技能卡打出。默认每回合限用 1 张。</li>
+<li><strong>⚔️ 行动</strong>：<strong>不抽卡也可以直接点"行动"</strong>。选择己方单位，移动、攻击或治疗。</li>
+<li><strong>⏭️ 结束回合</strong>：点击结束，交给对方。</li>
+</ol>
+<p><strong>🏳️ 投降</strong>：任何时候都可以投降；确认后本局立即结束，对方获胜。</p>
+<table><tbody>
+<tr><th>资源</th><th>含义</th><th>规则</th></tr>
+<tr><td>💰 资源点</td><td>部署单位</td><td>开局 40，用完为止</td></tr>
+<tr><td>🎯 指挥点</td><td>单位每次移动/攻击/治疗或点燃烽燧消耗 1 点</td><td>每回合开始时恢复为 2 点；烽燧阵线为 3 点</td></tr>
+<tr><td>⚡ 技能点</td><td>购买技能卡</td><td>开局 10；红/蓝方每回合 +1；烽燧阵线控制 1 座烽燧时回合开始再 +1</td></tr>
+</tbody></table>
+
+<h2>三、单位一览</h2>
+<table><tbody>
+<tr><th>单位</th><th>图标</th><th>费用</th><th>移动</th><th>攻击</th><th>特点</th></tr>
+<tr><td>步兵</td><td>⚔️</td><td>2</td><td>上下左右 1 格</td><td>相邻</td><td>基础兵种</td></tr>
+<tr><td>车</td><td>🐎</td><td>6</td><td>直线任意格</td><td>直线冲撞</td><td>消灭敌人后占位</td></tr>
+<tr><td>炮兵</td><td>💣</td><td>4</td><td>不可移动</td><td>全图远程</td><td>只能打本局已行动过的敌人；开火后变步兵前移 2 格</td></tr>
+<tr><td>海炮</td><td>💣</td><td>4</td><td>不可移动</td><td>同行直射</td><td><strong>仅海盗港湾</strong>：只能打同一行、路径无阻挡、距离最近的敌人；开火后同样变步兵</td></tr>
+<tr><td>二阶步兵</td><td>⚔️</td><td>合成</td><td>同步兵</td><td>同步兵</td><td>❤️2/2；HP≥2 时攻击 +1、受击时攻击方点数 -1；受伤变回普通步兵</td></tr>
+<tr><td>后勤兵</td><td>🛠️</td><td>3</td><td>上下左右 1 格</td><td>相邻</td><td>可解除相邻友军 1 层混乱</td></tr>
+<tr><td>地雷</td><td>💥</td><td>3</td><td>不可移动</td><td>被动</td><td>隐藏；敌人踩中触发判定</td></tr>
+<tr><td>防御工事</td><td>🏗️</td><td>1</td><td>不可移动</td><td>无</td><td>步兵可借工事转弯或跨攻</td></tr>
+<tr><td>墓碑（鬼）</td><td>🪦</td><td>—</td><td>不可移动</td><td>无</td><td>仅雾夜：可被攻击，会产生鬼魂</td></tr>
+<tr><td>鬼魂（鬼）</td><td>👻</td><td>—</td><td>1 格</td><td>撞鬼判定</td><td>仅雾夜：无碰撞体积，可与单位同格</td></tr>
+</tbody></table>
+<p><strong>霓虹纪元费用与机动</strong>：步兵 <strong>3 费</strong>、车 <strong>5 费</strong>（其余模式仍为 2 / 6 费）；车每回合最多移动 <strong>3 格</strong>（重力异常时 2 格）；基础步兵可沿上下左右任一方向<strong>直行 2 格</strong>，中间格必须可通行且没有单位。军火库特种步兵与二阶步兵不获得直行两格。</p>
+<p><strong>军火库单位</strong>（排雷兵、掷弹兵、工兵、双发炮兵、装甲车、补给车、二阶战车、指挥车）的完整能力见"一、2 军火库"。</p>
+<p><strong>“步兵”口径</strong>：卡牌文字中的“步兵”包括步兵、后勤兵、二阶步兵，以及军火库中的工兵、排雷兵、掷弹兵（不包括车、炮兵、地雷、防御工事）。</p>
+
+<h2>四、行动与战斗</h2>
+<h3>1. 基本行动</h3>
+<ul>
+<li>点击己方单位（蓝色边框）→ 黄色高亮为可移动格，红色高亮为可攻击敌人。</li>
+<li>每次移动或攻击消耗 <strong>1 指挥点🎯</strong>；指挥点用完或不想继续时结束回合。</li>
+<li>混乱🌀单位不能行动；攻击混乱目标时点数增加（每层 +1）。</li>
+<li>单位受到攻击可能被消灭或陷入混乱。</li>
+</ul>
+
+<h3>2. 各兵种行动方式</h3>
+<ul>
+<li><strong>步兵/后勤兵/二阶步兵</strong>：上下左右走 1 格；攻击相邻敌人。后勤兵可点击绿色高亮格为相邻友军解除 1 层混乱。</li>
+<li><strong>车</strong>：沿直线移动任意格，遇单位停止；若路径上有敌人，停在敌人前一格并攻击；消灭敌人后占据其位置。</li>
+<li><strong>炮兵</strong>：不能移动；可攻击全图<strong>本局已经行动过</strong>的敌方单位；不能打地雷。攻击后变成步兵，向前移动 2 格（被阻挡则停止）。</li>
+<li><strong>海炮</strong>（海盗港湾）：不能移动；只能攻击<strong>同一行</strong>的敌人，且自动选择路径无阻挡的最近目标；不受"已行动"限制。</li>
+<li><strong>地雷</strong>：敌方单位进入或经过时触发踩雷判定；己方单位不能停留。</li>
+<li><strong>防御工事</strong>：不能移动或攻击；步兵可绕过相邻己方工事转弯移动，或跨过工事攻击另一侧敌人（攻击点数 +1）。</li>
+<li><strong>军火库单位</strong>：排雷兵、掷弹兵、工兵按步兵行动；双发炮兵按炮兵行动；装甲车、补给车、二阶战车、指挥车按车行动。额外能力见"一、2 军火库"。</li>
+</ul>
+
+<h3>3. 攻击判定速览</h3>
+<p>每次攻击投 1d6 得到攻击点数，再按攻防兵种查表：</p>
+<table><tbody>
+<tr><th>攻击方 → 防御方</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6+</th></tr>
+<tr><td>步兵 打 步兵</td><td>攻方亡</td><td>攻方乱</td><td>攻方乱</td><td>防方乱</td><td>防方乱</td><td>防方亡</td></tr>
+<tr><td>步兵 打 车</td><td>攻方亡</td><td>攻方亡</td><td>攻方乱</td><td>攻方乱</td><td>攻方乱</td><td>防方乱</td></tr>
+<tr><td>车 打 步兵</td><td>攻方亡</td><td>防方乱</td><td>防方乱</td><td>防方乱</td><td>防方乱</td><td>防方亡</td></tr>
+<tr><td>车 打 车</td><td>攻方亡</td><td>攻方乱</td><td>攻方乱</td><td>防方乱</td><td>防方乱</td><td>防方亡</td></tr>
+<tr><td>步兵 打 炮兵</td><td>攻方亡</td><td>防方乱</td><td>防方乱</td><td>防方亡</td><td>防方亡</td><td>防方亡</td></tr>
+<tr><td>炮兵 打 步兵</td><td>无事</td><td>防方乱</td><td>防方乱</td><td>防方乱</td><td>防方亡</td><td>防方亡</td></tr>
+<tr><td>炮兵 打 炮兵</td><td>无事</td><td>无事</td><td>防方亡</td><td>防方亡</td><td>防方亡</td><td>防方亡</td></tr>
+</tbody></table>
+<p>最终点数大于 6 时直接消灭防御方（装甲车等特殊属性除外）。</p>
+
+<h2>五、技能卡</h2>
+<ul>
+<li><strong>获得</strong>：抽卡阶段从 3 张候选卡购买 1 张，消耗技能点⚡。同一回合可连续抽卡多次。</li>
+<li><strong>换一批</strong>：「临机应变」（98）生效期间，每次抽卡时可点「🔄 换一批」重新随机三张候选卡，每批限换一次。</li>
+<li><strong>使用</strong>：默认每回合 1 张。"丝滑连招"可让接下来的两个己方回合各使用 2 张。</li>
+<li><strong>特殊卡「执灯」</strong>：不会出现在抽卡池。仅在雾夜幽乡中，首次累积 2 点、之后每次累积 3 点凝魂自动兑换获得（不消耗技能点）。</li>
+<li>取消技能选择会完整撤销该次使用，不扣牌、不扣资源。</li>
+</ul>
+
+<h2>六、天候系统</h2>
+<p>天候是公开信息。经典、雪原、海盗的天候由引擎统一决定，并在变化前一回合预报；雾夜/初晖不是随机天气，而是由墓地数量与强制窗口判定的状态。</p>
+<table><tbody>
+<tr><th>模式</th><th>天候</th><th>变化</th><th>规则影响</th></tr>
+<tr><td>经典</td><td>晴朗 / 阴天 / 微风 / 细雨 / 薄雾</td><td>每 3 回合</td><td>无，仅表现</td></tr>
+<tr><td>雪原</td><td>小雪 / 大雪</td><td>每 3 回合</td><td>大雪：车常规移动/冲锋上限 4 格；本周期公共事件强化</td></tr>
+<tr><td>海盗</td><td>东风 / 西风</td><td>每 2 回合</td><td>顺风 +1、逆风 −1；载人快艇每回合顺风漂移 1 格</td></tr>
+<tr><td>雾夜</td><td>雾夜 / 初晖</td><td>墓地与窗口</td><td>沿用原有雾夜/初晖机制</td></tr>
+</tbody></table>
+<h3>经典模式</h3>
+<p>五种天候只改变氛围，不参与移动、攻击、地雷、技能、视野或胜负判定；薄雾不会隐藏单位。画面会随天候变化：晴朗有暖阳与浮尘，阴天压暗并掠过云影，微风飘落叶片，细雨落下雨丝与湿地反光，薄雾在棋盘上缓慢流动。</p>
+<h3>雪原：天候周期与公共事件</h3>
+<p>雪原每 3 回合构成一个天候周期（第1–3、4–6、7–9、10–12…回合），公共事件固定在每个周期的最后一回合（第3、6、9、12回合）触发。大雪时该周期的事件强化；第9回合起事件默认强化，两者不叠加。</p>
+<table><tbody>
+<tr><th>事件</th><th>普通</th><th>强化</th></tr>
+<tr><td>大雪封路</td><td>2 行中间格封锁 3 回合</td><td>3 行</td></tr>
+<tr><td>腹背受敌</td><td>列3蓝方、列7红方工事</td><td>另在3个随机行的列4/6布第二道工事</td></tr>
+<tr><td>寒意腾涌</td><td>1 行混乱 +1</td><td>2 行各 +2</td></tr>
+<tr><td>初阳普照</td><td>1 行清除混乱</td><td>2 行</td></tr>
+<tr><td>另起炉灶</td><td>双方各部署1个后勤兵</td><td>双方各追加1个步兵（己方阵地空格）</td></tr>
+<tr><td>群狼长啸</td><td>1 行获得精锐</td><td>2 行</td></tr>
+</tbody></table>
+<p>大雪的车行限制与「夜袭」取更严格值；跃迁、撤退、诱敌深入、战术撤退等技能位移不受影响。大雪不改变视野，也不会隐藏单位。</p>
+<h3>海盗：风向与快艇漂移</h3>
+<p>东风向右、西风向左，每 2 回合变化一次。登船单位海面移动基础 2 格，顺风 +1（最多3），逆风 −1（最少1）。每回合开始时，位于海面（列4–6，第0/2/4行）的登船单位顺风漂移 1 格；目标必须是空海面且非漩涡，否则不动。漂移不消耗指挥点、不视为行动、不触发攻击或地雷、不改变登船状态；船点上的单位不会免费入海，海面单位也不会被推上岸。</p>
+<h3>雾夜：雾夜与初晖</h3>
+<p>雾夜/初晖显示在天候栏，但仍由墓地数量与窗口决定：墓碑≥4 为雾夜；墓碑≤3 后进入初晖并至少持续3回合；第12回合墓地补至6并强制雾夜3回合。天候栏只做状态展示，不改变鬼魂可见性、撞鬼判定、凝魂或胜负。</p>
+<p>其他模式（城邦裂变、圣辉、蛇骨矿洞、蠕潮蚀野、烽燧阵线）不显示天候。</p>
+
+<h2>七、模式详解（重点）</h2>
+
+<h3>🐺 雪原群狼之舞</h3>
+<p>标准 11×5 棋盘，棋盘为雪原主题并带飘雪特效。天候每 3 回合变化一次（小雪 / 大雪），构成一个公共事件周期；公共事件固定在周期最后一回合触发（第 3、6、9、12…回合），并在<strong>前一回合提前预报</strong>事件内容与目标行列。大雪时该周期的事件强化；第 9 回合起事件默认强化，两者不叠加。大雪会令车的常规移动与冲锋上限降为 4 格。</p>
+<table><tbody>
+<tr><th>事件</th><th>效果</th></tr>
+<tr><td>大雪封路</td><td>随机封住中间列 2 格（强化后 3 格），持续 3 回合；格上单位被挤到最近的空格并混乱+1，无处可退才被消灭</td></tr>
+<tr><td>腹背受敌</td><td>列 3 布满蓝方防御工事，列 7 布满红方防御工事；原格单位被挤回各自阵地，不会跨场传送；强化时另在 3 个随机行的列 4/6 布置第二道工事</td></tr>
+<tr><td>寒意腾涌</td><td>选择一行<strong>红蓝双方都有单位</strong>的行（优先双方数量最均衡的行），该行单位混乱+1；强化后两行、+2</td></tr>
+<tr><td>初阳普照</td><td>选择一行双方都有单位的行，解除该行全部混乱；强化后两行</td></tr>
+<tr><td>另起炉灶</td><td>红、蓝双方各在自己的阵地部署 1 个后勤兵；强化时再各追加 1 个步兵（己方阵地空格）</td></tr>
+<tr><td>群狼长啸</td><td>选择一行双方都有单位的行，该行步兵、车、炮兵获得对应"精锐"属性；强化后两行</td></tr>
+</tbody></table>
+
+<h3>🏛️ 城邦裂变（三方混战 · 希腊城邦）</h3>
+<p>红方<strong>斯巴达</strong>、蓝方<strong>雅典</strong>与<strong>AI 波斯远征军</strong>三方对战。中间三列（4–6）为波斯远征军阵地。三方阵营的名称与颜色<strong>固定不变</strong>，不会因事变而互换。</p>
+<ul>
+<li><strong>共同御敌期</strong>：斯巴达与雅典可以互相攻击；技能卡的敌方目标只能选择波斯远征军。</li>
+<li><strong>裂变触发</strong>：斯巴达与雅典之间第一次互相攻击（炮兵/海炮也会触发，仅地雷除外）时，攻击方获得<strong>选择权</strong>：发动则按发起方结算奖励；暂不发动则摩擦+1，本回合不再询问。摩擦达到 <strong>3</strong> 时由最后一次攻击方自动发动。</li>
+<li><strong>奖励分支</strong>：
+  <br>· <strong>斯巴达主动发起</strong>：斯巴达获得 1 辆精锐装甲车，雅典获得 2 个二阶步兵。
+  <br>· <strong>雅典主动发起</strong>：雅典获得 2 门海炮（本模式可用），斯巴达获得 2 个二阶步兵。
+  <br>奖励生成在各自阵地内的空格；奖励数值可在后续版本中按测试结果调整。</li>
+<li><strong>波斯远征军 AI</strong>：开局部署 4 个工事（2 个带炮塔）、2 辆普通车、2 辆精锐装甲车、2 个精锐后勤兵和 1 门精锐炮兵。第 1–5 回合每回合最多行动 3 次，第 6 回合起恢复为最多 4 次；每回合第一动优先让炮兵或后勤兵行动，炮兵优先攻击本回合已行动或低 HP 的目标。</li>
+<li><strong>消灭波斯远征军奖励</strong>：消灭其单位时，在<strong>己方阵地</strong>生成对应的己方单位（步兵→步兵，车→车/战损车，炮兵/工事/后勤→同兵种）。每方最多获得 3 个奖励单位，超出后改为技能点+1。</li>
+<li><strong>特殊回合</strong>：第 4、8、12 回合波斯远征军分别获得 1 个精锐步兵、精锐装甲车、精锐炮兵增援；第 6、9 回合若其战斗单位≤6，额外获得 1 个精锐步兵。第 12 回合若事变已发生，<strong>未主动发起事变的一方</strong>获得 1 步兵 + 1 后勤兵。</li>
+<li><strong>战场与配乐</strong>：大理石城垣、爱琴海、橄榄林与列柱广场；配乐使用里拉琴、奥洛斯管与战鼓，事变后转为弗里吉亚色彩的战争乐章。</li>
+<li><strong>胜利</strong>：任意一方全灭后，仅剩的一方获胜；同归于尽为平局。</li>
+</ul>
+
+<h3>🏴‍☠️ 海盗港湾</h3>
+<p>棋盘为"四三四"：红方甲板（列 0–3）、连接处（列 4–6）、蓝方甲板（列 7–10）。连接处的<strong>第 0、2、4 行是海水</strong>，第 1、3 行是甲板。</p>
+<p><strong>① 快艇与登船</strong></p>
+<ul>
+<li>快艇生成点共 6 个：(3,0)(3,2)(3,4)(7,0)(7,2)(7,4)，开局各有 1 艘快艇，<strong>不能初始部署单位</strong>。</li>
+<li>单位走到仍有快艇的点位即<strong>登船</strong>（单位上出现⛵），快艇标记消失。</li>
+<li>登船单位移动到甲板（非海水、非快艇点）即<strong>上岸</strong>，登船状态消失。</li>
+</ul>
+<p><strong>② 海水移动规则</strong></p>
+<ul>
+<li>普通（未登船）单位不能进入海水。</li>
+<li>登船单位在海水上只能<strong>左右水平移动</strong>，路径不能有单位或漩涡。基础 2 格；顺风 +1、逆风 -1（最低 1 格）。</li>
+<li>登船单位在快艇点上：既可以向海面方向水平移动（受风向影响，保持登船），也可以按原兵种规则向甲板方向移动（上岸，视为消耗登船机会）。</li>
+<li><strong>风向 🌬️</strong>：开局随机生成，之后每 2 回合改变一次；东风向右、西风向左。天候栏会显示当前风向与下期预报。</li>
+<li><strong>快艇漂移</strong>：每回合开始时，位于海面上的登船单位顺风漂移 1 格。目标必须是空海面且不是漩涡，否则原地不动；船点上的单位不会被推入海中，海面单位也不会被推上岸。漂移不消耗指挥点、不视为行动，不触发攻击或地雷。</li>
+<li>车登船后遵循相同规则，不能一步冲到对面。</li>
+</ul>
+<p><strong>③ 海炮</strong></p>
+<ul>
+<li>海盗港湾中部署的"炮兵"会自动变为<strong>海炮</strong>。</li>
+<li>海炮只能攻击<strong>同一行</strong>的敌人，自动选择路径无阻挡的最近目标；不受"目标必须已行动过"限制。</li>
+<li>开火后变为步兵并向前移动 2 格，遇到海水或阻挡停止。</li>
+</ul>
+<p><strong>④ 船只相撞</strong></p>
+<p>两个登船单位在海水上相邻（或攻击方在快艇点、目标在同行 2 格内）时可攻击，判定不受任何 Buff 影响：</p>
+<table><tbody>
+<tr><th>点数</th><th>结果</th></tr>
+<tr><td>1</td><td>攻击方落水消灭</td></tr>
+<tr><td>2–3</td><td>双方混乱，各自返回最近的甲板空格，登船状态消失</td></tr>
+<tr><td>4–5</td><td>防御方混乱，返回最近的甲板空格，登船状态消失</td></tr>
+<tr><td>6</td><td>防御方落水消灭</td></tr>
+</tbody></table>
+<p><strong>⑤ 据点</strong>：(5,1) 与 (5,3)。每回合开始时，据点上有红/蓝单位，该阵营技能点 +1（<strong>每方每回合最多 +1，即使同时占据两个据点</strong>）；每方首次占领每个据点时额外 +1。</p>
+<p><strong>⑥ 海洋公共事件</strong>：第 3 回合首次触发，之后每 3 回合一次（第 3、6、9、12…回合），并在前一回合提前预报：</p>
+<table><tbody>
+<tr><th>事件</th><th>效果</th></tr>
+<tr><td>怒涛霜雪</td><td>预报的海水格生成漩涡，持续 3 回合；漩涡上的登船单位立即消灭，单位不能进入</td></tr>
+<tr><td>巨炮铿轰</td><td>预报的一行<strong>中立区（列 4–6）</strong>所有单位各受一次炮兵判定</td></tr>
+<tr><td>淬钢成艇</td><td>为所有空置的快艇点补充快艇</td></tr>
+</tbody></table>
+<p>此外，每 3 回合自动为双方各补充 1 艘空置快艇。第 9 回合预报、第 10 回合固定触发<strong>海怪来袭</strong>（当回合不再触发随机事件）：两个据点上的单位立即被消灭。</p>
+
+<h3>🌫️ 雾夜幽乡（第三方鬼阵营）</h3>
+<p>红方、蓝方之外，还多了一个<strong>自动行动的鬼阵营</strong>（紫色文字）。中间三列（4–6）是墓地。鬼阵营不抽卡、不用卡。</p>
+<p><strong>① 墓碑 🪦</strong></p>
+<ul>
+<li>开局在墓地随机部署 <strong>9 个墓碑</strong>，同时产生 <strong>2 个鬼魂</strong>。</li>
+<li>墓碑不能移动、不能主动攻击，但可以被人类单位攻击（见下方墓碑判定表）。</li>
+</ul>
+<p><strong>② 鬼魂 👻</strong></p>
+<ul>
+<li>鬼魂<strong>没有碰撞体积</strong>，可以和其他单位（包括墓碑）站在同一格。</li>
+<li>鬼魂每回合移动 1 格；<strong>第 12 回合前只能在墓地（列 4–6）内活动</strong>，第 12 回合起可以走出墓地。</li>
+<li>鬼魂会优先寻找步兵、后勤兵和已混乱的人类单位，主动回避炮兵、二阶步兵和执灯士；走到人类单位所在格时触发撞鬼。</li>
+<li>每回合鬼阵营最多行动 min(3, 可行动鬼魂数) 次；每个<strong>人类单位每回合最多被撞鬼 1 次</strong>。</li>
+</ul>
+<p><strong>③ 撞鬼判定</strong>（撞鬼单位视为攻击方）：</p>
+<p><strong>雾夜保护</strong>：雾夜中，<strong>混乱为 0</strong> 的人类单位撞鬼时不再直接进入下方判定，而是被推回到最近的空格、混乱+1，且该鬼魂显形到本回合结束；已混乱的单位以及初晖中的撞鬼仍使用下方原判定表。</p>
+<table><tbody>
+<tr><th>兵种</th><th>1–2</th><th>3</th><th>4</th><th>5–6</th></tr>
+<tr><td>步兵 / 后勤兵</td><td>1–3 被消灭</td><td>混乱</td><td>混乱</td><td>鬼魂消灭，凝魂+1</td></tr>
+<tr><td>车</td><td>1–3 被消灭</td><td>被消灭</td><td>变为普通步兵</td><td>鬼魂消灭，凝魂+1</td></tr>
+<tr><td>炮兵 / 海炮</td><td>1–3 被消灭</td><td>被消灭</td><td>鬼魂消灭，凝魂+1</td><td>鬼魂消灭，凝魂+1</td></tr>
+<tr><td>二阶步兵</td><td>1–2 HP-1</td><td>混乱</td><td>鬼魂消灭，凝魂+1</td><td>鬼魂消灭，凝魂+1</td></tr>
+</tbody></table>
+<ul>
+<li>判定结果击杀鬼魂时鬼魂消失；雾夜推回时鬼魂留在原地，并显形到本回合结束。</li>
+<li>鬼魂格在行动高亮中<strong>显示为普通空格</strong>；移动进去或车经过时才会触发撞鬼。</li>
+</ul>
+<p><strong>④ 攻击墓碑</strong>：</p>
+<table><tbody>
+<tr><th>攻击方</th><th>1</th><th>2–3</th><th>4–5</th><th>6+</th></tr>
+<tr><td>步兵 / 后勤兵</td><td>攻击方亡</td><td>攻击方乱</td><td>墓碑消失，凝魂+1</td><td>墓碑消灭，凝魂+1</td></tr>
+<tr><td>车</td><td>攻击方亡</td><td>墓碑消失，凝魂+1</td><td>墓碑消失，凝魂+1</td><td>墓碑消灭，凝魂+1</td></tr>
+<tr><td>炮兵 / 海炮</td><td>无事</td><td>墓碑消失，凝魂+1</td><td>墓碑消失，凝魂+1</td><td>墓碑消灭，凝魂+1</td></tr>
+<tr><td>二阶步兵</td><td>1–2 攻击方乱</td><td>攻击方乱</td><td>墓碑消失，凝魂+1</td><td>墓碑消灭，凝魂+1</td></tr>
+</tbody></table>
+<p>攻击墓碑<strong>不会再触发撞鬼</strong>；墓碑被消灭时攻击方凝魂+1。</p>
+<p><strong>⑤ 凝魂与执灯</strong></p>
+<ul>
+<li>消灭鬼魂、因撞鬼陷入混乱、消灭墓碑均可获得 <strong>凝魂💀</strong>：普通单位 +1，执灯士击杀鬼魂 +2。状态栏会显示当前凝魂数。</li>
+<li>首次凝魂达到 <strong>2 点</strong>、之后每次达到 <strong>3 点</strong>时，自动获得 1 张<strong>「执灯」技能卡</strong>（直接进入牌库，不消耗技能点，多余凝魂保留）。</li>
+<li>打出「执灯」：选择一个己方单位，使其永久成为<strong>执灯士</strong>（🔆标识）。</li>
+<li>执灯士撞鬼时不进行判定，<strong>鬼魂直接消灭并获得 2 凝魂</strong>；鬼魂也会主动回避执灯士。</li>
+</ul>
+<p><strong>⑥ 雾夜与初晖</strong></p>
+<table><tbody>
+<tr><th>状态</th><th>条件</th><th>鬼魂</th><th>棋盘</th><th>查看鬼魂按钮</th></tr>
+<tr><td>🌫️ 雾夜</td><td>场上墓碑 ≥ 4</td><td>不可见；撞鬼时该鬼魂显形到回合结束</td><td>暗色</td><td>联机版不提供</td></tr>
+<tr><td>🌅 初晖</td><td>场上墓碑 ≤ 3</td><td>完全可见</td><td>整体调亮</td><td>无需查看</td></tr>
+</tbody></table>
+<ul>
+<li>状态在每回合开始时自动判定，切换时日志会提示"雾夜降临"或"初晖渐明"。</li>
+<li>雾夜 / 初晖同时显示在天候栏中，但天候栏只做展示，不新增判定；所有规则仍以上表为准。</li>
+<li>墓碑降到 3 个及以下后，<strong>初晖至少锁定 3 回合</strong>，之后才可能因墓碑回升转为雾夜。</li>
+<li>鬼魂滋生：雾夜每 2 回合产生 2 个；初晖每 3 回合产生 1 个（只会补在没有鬼魂的墓碑上）。</li>
+<li><strong>第 10 回合预报、第 12 回合结算</strong>：墓地将补充到 <strong>6 个</strong>（不填满空地），并强制雾夜 3 回合。</li>
+<li>联机版<strong>不提供</strong>主动查看鬼魂；单机版保留的 👻 按钮仅用于测试。</li>
+</ul>
+<p><strong>⑦ 胜负</strong>：红方和蓝方之间正常判定；若<strong>双方人类全部被消灭</strong>，则判<strong>鬼阵营胜利</strong>。</p>
+
+<h3>⚔️ 终局加速与终局判定（通用）</h3>
+<p>第 <strong>15</strong> 回合起进入终局加速：攻击方的<strong>攻击点数</strong>每 2 回合 +1（第 15–16 回合 +1、第 17–18 回合 +2、第 19 回合起 +3），<strong>最高 +3</strong>；只加攻击、不加防御，对双方及皇军/鬼魂对称生效，不再使中立区单位叠加混乱。<strong>烽燧阵线不启用终局加速</strong>。</p>
+<p>第 <strong>20</strong> 回合仍未分出胜负时<strong>强制终局判定</strong>：各模式按自身规则计分（经典/雪原/海盗/雾夜/城邦依次比较中立区单位数 → 存活单位数 → 技能点），仍持平则判平局。</p>
+
+<h3>✝️ 圣辉之战</h3>
+<p>采用<strong>天空 / 地面双层地图</strong>，两张地图同时显示、天空在上。地面阵地为红方列 0–2、蓝方列 8–10；初始资源 <strong>30</strong>，基础指挥点 <strong>3</strong>（第 8 回合起提升为 4）。一个单位同一时刻只在一张地图上。</p>
+<ul>
+<li><strong>龙属性标</strong>：第 1 回合起每 3 回合，在双方阵地内各随机刷新 1 个龙属性标（优先空格）；若阵地没有空格，则随机附身于阵地上的己方地面单位。</li>
+<li><strong>龙属性</strong>：单位与龙属性标同格时立即获得龙属性，标被消耗。拥有龙属性且无混乱时，点击自己所在格即可<strong>升空</strong>（消耗 1 行动点），进入天空对应格并获得 3 点龙力；不再有站位限制。</li>
+<li><strong>天空移动</strong>：上下左右 1–2 格，或斜向 1 格；受单位阻挡。天空 (5,2) 为火山峰俯视图，不可通过。</li>
+<li><strong>天空攻击</strong>：对攻击范围内的敌方天空单位进行一次攻击；点数先按地面规则计算，再加上己方龙力、减去敌方龙力。每次攻击后己方龙力 -1（最低 1）。</li>
+<li><strong>俯冲</strong>：天空单位可点击自己所在格俯冲。对应地面格为空 → 落地并失去龙属性；为敌方单位 → 以 +3 点进行一次地面攻击，随后俯冲单位消失。对应格为火山底座或己方单位时不可俯冲。</li>
+<li><strong>区域计分</strong>：每个己方回合开始时，每“过半控制”一个区域（3 格区占 2 格、4 格区占 3 格）+1 分；先到 8 分获胜。双方各行动一次后结算；同分时比较当前控制区域数。第 18 回合开始仍未决出，则依次比较分数、控制区域数、控制格数、剩余战斗单位，仍相同判平局。</li>
+<li><strong>占满区域奖励</strong>（每回合开始时判定，每组每方整局一次）：占满任意一组第 1 类区域 → 技能点 +2；第 2 类 → 选择敌方单位 +2 混乱；第 3 类 → 在己方阵地布置一个炮兵。一组内只要有空格或敌方单位就不算占满。</li>
+<li><strong>火山喷发</strong>：第 6 回合起每 6 回合，随机一组特殊区域上的地面单位全部被消灭。</li>
+<li><strong>追赶增援</strong>：第 4、7、10、13 回合开始时检查；若己方战斗单位少于 4 个，或比对方少 2 个以上，且未达到 8 个战斗单位上限，可在己方阵地免费部署 1 个步兵；第 13 回合后不再增援。</li>
+<li>地面第 2 行、列 4–6 为火山底座（不可通过）；地面特殊区域分三类，颜色已区分。</li>
+</ul>
+
+<h3>⛏️ 蛇骨矿洞（v1.7.0 分层版）</h3>
+<p>采用<strong>地面 / 矿洞双层地图</strong>：地面沿用 L 形阵地与钻井，矿洞是独立的下层 11×5 地图。一个单位同一时刻只在一层；地面与矿洞之间只能通过<strong>竖井</strong>往返。</p>
+<ul>
+<li><strong>地面阵地</strong>：红方为列 0–3 的第 1、3 行上下两排，加 (4,0)、(4,4)；蓝方对称。钻井 (5,1)、(5,3) 永久阻挡。</li>
+<li><strong>竖井</strong>：地面坑洞 (0,2)、(2,2)、(5,2)、(8,2)、(10,2) 对应矿洞同坐标竖井。中央竖井 (5,2) 初始被<strong>蛇骨矿主</strong>封锁；击败矿主后开启。</li>
+<li><strong>下井 / 上井</strong>：只有<strong>步兵类</strong>单位（步兵、后勤兵、二阶步兵及工兵、排雷兵、掷弹兵）可以进出矿洞；混乱或压制中不可。选中位于竖井上的单位后，<strong>点击它自己所在格</strong>即可下井；在矿洞竖井上选中自己并再次点击即可上井。</li>
+<li><strong>通行成本</strong>：每次下井或上井消耗 <strong>1 指挥点</strong>，但<strong>不消耗该单位的行动</strong>；同一单位每回合最多换层一次。</li>
+<li><strong>矿洞移动与战斗</strong>：矿洞内单位沿上下左右移动，每回合最多 2 格；攻击相邻敌人。矿石地形与地面规则相互独立，地面技能不会波及矿洞。</li>
+<li><strong>视野盲区</strong>：矿洞默认只显示己方单位周围 2 格（岩壁会挡住视线）；其余区域为迷雾，敌方单位与怪物隐藏。竖井、晶簇、遗物始终可见。发生交战或拾取后，目标会向对方显形 1 回合。</li>
+<li><strong>晶簇与遗物</strong>：矿洞 (2,0)、(8,0) 的晶簇拾取后技能点 +2；(2,4)、(8,4) 的遗物拾取后随机获得一张技能卡。</li>
+<li><strong>矿主与守卫</strong>：中央竖井由<strong>蛇骨矿主</strong>（4 HP）镇守，另有 2 个骨蛇守卫（2 HP）与 2 只矿兽（1 HP）。怪物会主动追击最近的人类单位。击败矿主的一方技能点 +3、获得一张技能卡并开启中央竖井。</li>
+<li><strong>塌方</strong>：第 3 回合起每 4 回合预警一次，下回合随机 1–2 格塌方，封堵 3 回合并消灭格上单位；竖井、晶簇、遗物与矿主所在格不会被选中。</li>
+<li><strong>胜负与时限</strong>：任一方在地面与矿洞的全部可作战单位被消灭即判负。第 20 回合开始若仍未分出胜负，依次比较<strong>总存活单位数 → 地面单位数 → 技能点</strong>，仍相同判平局。</li>
+<li>单机热座下圣辉、矿洞、蠕潮蚀野与烽燧阵线均可直接选择，用于测试分层地图、怪物、潮汐与烽燧逻辑；AI 目前只操作地面/天空单位，矿洞探索以手动双人测试为主。</li>
+</ul>
+
+<h3>🌊 蠕潮蚀野（v1.8.0 新模式）</h3>
+<p>斯巴达与雅典在湿地废墟上共同面对不断扩张的<strong>蠕潮</strong>。潮水不属于任何一方，却会同时吞蚀双方的阵地。棋盘中央固定一座<strong>潮眼 (5,2)</strong>，两侧 (1,2) 与 (9,2) 各有一座<strong>镇石</strong>（3 HP）。</p>
+<ul>
+<li><strong>潮格</strong>：潮眼与所有潮格都<strong>不可通行</strong>；单位不能部署、移动或穿过潮格。红方阵地为列 0–4，蓝方为列 6–10。</li>
+<li><strong>潮涌时机</strong>：每轮双方各行动一次后（第 2 回合起，蓝方结束、红方开始前）结算一次潮涌。</li>
+<li><strong>扩张数量</strong>：每轮扩张 <strong>min(6, 2 + floor((回合-1)/3))</strong> 格，只会从与现有潮格上下左右相邻的非潮格中选择；潮水始终保持与潮眼连通。</li>
+<li><strong>扩张优先级</strong>：① 玩家用「引潮」标记的格子；② 分别靠近两座镇石的格子；③ 其余离任一镇石最近的格子。界面会以涟漪与「潮汛」标记预告下一轮潮涌位置。</li>
+<li><strong>涌蚀</strong>：新潮格上的作战单位<strong>混乱 +1</strong>，并被推到附近离潮眼最远的空格；找不到空格则被潮水吞没。地雷与防御工事会被直接吞没；工事可以挡下一次潮水，阻止该格变成潮格。</li>
+<li><strong>镇石</strong>：潮水推到镇石所在格时，镇石 <strong>-1 HP</strong> 且该格不会变成潮格。任一镇石归零即判负；双方镇石同时归零为「潮胜」平局。若镇石在某轮开始时四周没有相邻潮格，会修复 <strong>+1 HP</strong>（最多 3）。</li>
+<li><strong>斩潮 🌊</strong>：选中可行动的己方单位后点击「斩潮」，再点击距离 1 格内（工兵 2 格）的非潮眼潮格，可移除该潮格。斩潮<strong>消耗该单位的行动</strong>；移除后会清除与潮眼断开连接的孤立潮格。</li>
+<li><strong>引潮 🌀</strong>：每方<strong>每回合最多一次</strong>，选中单位后点击「引潮」，再点击距离 1 格内（工兵 2 格）的空格；该格必须与潮格相邻。引潮标记会让下一轮潮涌优先吞并该格，并<strong>消耗该单位的行动</strong>。</li>
+<li><strong>终局</strong>：第 20 回合仍未分胜负时，依次比较：<strong>镇石 HP → 己方半场潮格数（少者胜）→ 存活战斗单位数</strong>，仍相同判平局。</li>
+<li><strong>战场与配乐</strong>：夜潮、淹没的列柱与潮眼冷光；配乐以深海长音、水滴、低音鼓与水下合唱构成缓慢的潮汐脉搏。</li>
+</ul>
+
+<h3>🔥 烽燧阵线（v1.9.0 新模式）</h3>
+<p>长城横贯战场中央，红蓝两军争夺沿线三座<strong>烽燧</strong>。全图仅有的两座<strong>关门</strong>是穿过长城的唯一地面通道；跨墙点燃烽燧并守住相邻格，才能把它变成己方的烽火。</p>
+<ul>
+<li><strong>长城与关门</strong>：中央第 5 列为不可通行的城墙，只有 (5,1) 与 (5,3) 两座<strong>关门</strong>可以通行。三座烽燧位于 (5,0)、(5,2)、(5,4)，占据城墙格，任何单位都<strong>不能停留或穿过</strong>。关门格可以正常通行、停留和驻守，驻守单位会完整显示，关门本身不算“跨过长城”。</li>
+<li><strong>行动点</strong>：烽燧阵线双方每回合基础指挥点为 <strong>3</strong>，不再因控制烽燧额外获得指挥点。</li>
+<li><strong>点燃</strong>：己方地面单位必须<strong>跨过长城</strong>（红方 x≥6，蓝方 x≤4），停在烽燧上下左右相邻格，点击烽燧并消耗 <strong>1 指挥点</strong>点燃；站在关门格（x=5）不能点燃。点燃状态按阵营分别记录并永久保留，但点燃本身不等于占领。</li>
+<li><strong>控制判定</strong>：每轮双方各行动一次后（第 2 回合起，红方开始前）结算一次。一座烽燧只有在“己方已点燃”且“敌方半场有己方地面单位正交相邻”时才能被己方控制；任意敌方地面单位（包括己方半场与关门格）相邻都会争夺或否决控制。双方都满足或都不满足时恢复中立；单位离开后，下一轮结算时失去控制。</li>
+<li><strong>烽燧增益</strong>：控制 <strong>1 座</strong> → 己方回合开始、抽卡前技能点 +1（不按座数叠加）；控制 <strong>2 座</strong> → 己方所有攻击最终点数 +1；控制 <strong>3 座</strong> → 立即获胜（「三燧连城」）。</li>
+<li><strong>争夺节奏</strong>：关门是唯一通路；关门格上的单位可以争夺两侧烽燧，但不能点燃或控制，必须踏上敌方半场。也可用炮兵、技能卡等远程手段清理烽燧旁的敌军。</li>
+<li><strong>终局</strong>：第 20 回合仍未控制三座烽燧时，依次比较<strong>控制烽燧数 → 存活战斗单位数 → 技能点</strong>，仍相同判平局。常规全灭判定仍然有效。</li>
+<li><strong>战场与配乐</strong>：夯土城墙、关门与烽燧狼烟；烽燧顶部以红/蓝旗帜与火焰显示控制方，已点燃但未控制时保留同色小火苗；关门由左右石柱与门楣构成，中间留空，驻守单位不会被挡住。配乐以中国大鼓、低音笙、古筝拨弦与号角长音构成苍凉的边塞主题。</li>
+</ul>
+
+<h3>🛰️ 霓虹纪元（v1.10.0 新模式）</h3>
+<p>轨道数据城的两支安保部队争夺中央<strong>数据核心</strong>。核心每轮向外喷出<strong>数据包</strong>，地面单位拾取后要穿过火线带回己方<strong>上传终端</strong>；谁先把 <strong>5 个数据包</strong>上传完毕，谁就接管系统。抢包、护送、截杀与事件应对取代了单纯站桩。</p>
+<ul>
+<li><strong>数据核心</strong>：(5,2) 永久阻挡，不能部署、移动、穿过或被技能位移进入。核心不占单位位；它每轮向周围 8 个<strong>空着的喷包格</strong>随机喷出 <strong>2 个数据包</strong>（场上地上数据包上限 6 个）；若 8 格都被单位占满，本轮不喷。</li>
+<li><strong>喷包区部署限制</strong>：开局部署阶段，核心周围 8 格<strong>不能放置单位</strong>（格子上显示 ⛔ 红色斜纹）；进入行动阶段后，这些格子恢复为正常可通行区域。单位不会因喷包而凭空获得数据包。</li>
+<li><strong>数据包</strong>：地面单位移动<strong>经过或停在</strong>包格时<strong>立即拾取</strong>，无需等到回合结束；车的直线移动、步兵直行两格都会逐格拾取。普通单位最多携带 <strong>1 个</strong>，车/装甲车（反应装甲）最多携带 <strong>2 个</strong>。携带者被消灭或移除时，包会掉落在原地；混乱中的携带者仍可携带，但不能上传。</li>
+<li><strong>上传终端</strong>：红方 (0,2)、蓝方 (10,2)。<strong>己方回合开始时</strong>，站在己方终端上的非混乱地面单位自动上传全部携带的数据包，每个包 +1 协议。上传不是行动，不消耗指挥点；终端被敌方占据不影响上传（只看站在终端上的己方单位）。</li>
+<li><strong>胜利</strong>：协议先到 <strong>5 点</strong>立即「系统接管」。未上传的包不计协议；携带中的包也不会因回合结束自动上交。</li>
+<li><strong>阵营阵地</strong>：红方列 0–4，蓝方列 6–10；中央列 5 只有核心与其上下四格，核心格本身不可通行。常规全灭判定仍然有效。</li>
+<li><strong>科技改装</strong>：本模式中，双方所有可部署单位按类别获得一项被动（不改变卡牌与基础数值，只在霓虹纪元生效）。被动按单位单独记录触发次数，同名单位互不共享次数。</li>
+<li><strong>公共事件</strong>：第 2 回合起每 <strong>3 回合</strong>触发一次，并在触发前 <strong>1 回合</strong>公开预报（HUD 与天气条显示事件名与图标）。事件对双方同时生效，不会只惩罚一方；第 18 回合后不再安排新事件。</li>
+<li><strong>终局</strong>：第 20 回合仍未有人到 5 点协议时，依次比较<strong>协议数 → 携带中的数据包 → 核心区单位数 → 存活战斗单位数 → 技能点</strong>，仍相同判平局。</li>
+<li><strong>通用终局加速</strong>：霓虹纪元受第 15 回合起的攻击点数加速影响（+1 → +2 → +3，封顶 +3），只有烽燧阵线关闭该规则。</li>
+<li><strong>战场、棋子与配乐</strong>：合金平台、冷光数据干道与中央核心立方；霓虹单位使用专属科技线描棋子，带冷光描边与青色辉光。配乐为 118 BPM、32 小节四段体，8 小节和声上轮换 A/B/C/D 四段旋律，32 小节内不重复同一乐句；结束曲改为铜管主奏的明亮上行句。</li>
+</ul>
+<h4>科技改装一览</h4>
+<table><tbody>
+<tr><th>单位类别</th><th>改装代号</th><th>效果</th></tr>
+<tr><td>步兵</td><td>机动强化</td><td>可沿上下左右任一方向直行 2 格；中间格必须可通行且没有单位。</td></tr>
+<tr><td>二阶步兵</td><td>外骨骼</td><td>每个单位整局首次被攻击时，最终点数 -1。</td></tr>
+<tr><td>车 / 装甲车</td><td>反应装甲</td><td>每个单位整局首次被摧毁时改为混乱 +2 并留在场上，不消灭。</td></tr>
+<tr><td>二阶战车</td><td>相位装甲</td><td>每个单位整局首次被施加混乱时直接抵消。</td></tr>
+<tr><td>炮兵 / 双发炮兵</td><td>磁轨炮</td><td>攻击同列目标时最终点数 +1。</td></tr>
+<tr><td>后勤兵</td><td>纳米云</td><td>每回合首次解混乱时额外移除 1 点。</td></tr>
+<tr><td>工兵</td><td>快速部署</td><td>每回合首次建造后不消耗行动，可继续行动一次。</td></tr>
+<tr><td>排雷兵</td><td>扫描阵列</td><td>排雷探测范围由 1 格提升到 2 格。</td></tr>
+<tr><td>掷弹兵</td><td>微型榴弹</td><td>每次炮击命中后，目标周围 1 格内所有敌方单位混乱 +1。</td></tr>
+<tr><td>补给车</td><td>护盾发生器</td><td>相邻友军受到的攻击最终点数 -1。</td></tr>
+<tr><td>指挥车</td><td>战场链路</td><td>指挥车被消灭时，其所属方下回合指挥点 +1，不再使该方全体混乱。</td></tr>
+</tbody></table>
+<h4>公共事件一览</h4>
+<table><tbody>
+<tr><th>事件</th><th>效果</th></tr>
+<tr><td>⚡ 电磁风暴</td><td>触发时所有携带者立即掉落数据包；本回合所有远程攻击最终点数 -1。重力异常与磁轨炮加成仍生效。</td></tr>
+<tr><td>☄️ 轨道碎片</td><td>预警时标出 3 个连续格；触发时格上单位混乱 +1，格上的地雷、防御工事与地上数据包被摧毁。</td></tr>
+<tr><td>💾 数据洪流</td><td>触发时核心额外喷出 2 个数据包（替代本轮常规喷出）。</td></tr>
+<tr><td>🌀 重力异常</td><td>本回合所有攻击最终点数 +1，所有车辆移动上限降至 2 格。</td></tr>
+<tr><td>🌫️ 纳米雾</td><td>中央三列（x=4–6）内的单位作为防御方被攻击时，最终点数 -1。</td></tr>
+<tr><td>🔌 停电</td><td>本回合上传终端离线、地雷不触发；双方回合开始时指挥点 -1（最低 0）。</td></tr>
+</tbody></table>
+
+<h2>八、胜利条件</h2>
+<ul>
+<li><strong>经典/雪原/海盗/圣辉</strong>：一方所有可作战单位被消灭，另一方获胜；<strong>矿洞</strong>另设第 20 回合判定。</li>
+<li><strong>城邦裂变</strong>：斯巴达、雅典、波斯远征军任意一方全灭后，仅剩一方存活即获胜。</li>
+<li><strong>蠕潮蚀野</strong>：任一镇石 HP 归零即由对方获胜；双方镇石俱毁为「潮胜」平局；第 20 回合按镇石→潮格→存活单位判定。常规全灭判定仍然有效。</li>
+<li><strong>烽燧阵线</strong>：控制全部 3 座烽燧即「三燧连城」获胜；第 20 回合按控制烽燧数→存活单位→技能点判定。常规全灭判定仍然有效。</li>
+<li><strong>霓虹纪元</strong>：率先上传满 5 个数据包（5 点协议）即「系统接管」获胜；第 20 回合按协议数→携带数据包→核心区单位数→存活单位→技能点判定。常规全灭判定仍然有效。</li>
+<li><strong>雾夜幽乡</strong>：红蓝正常判定；双方人类全灭时鬼阵营胜利。</li>
+<li>地雷和防御工事不计入存活单位。</li>
+</ul>
+
+<h2>九、常见问题</h2>
+<p><strong>Q1：为什么我这回合不抽卡也能行动？</strong><br>A：当前版本抽卡是可选步骤；可以直接点"⚔️ 行动"。</p>
+<p><strong>Q2：一回合能抽几张卡？</strong><br>A：只要技能点足够，可以连续抽多张。三张候选都买不起时才能取消。</p>
+<p><strong>Q3：为什么我的单位不能动了？</strong><br>A：检查是否处于混乱🌀、被压制⛔、本回合已行动过、或指挥点🎯用完。</p>
+<p><strong>Q4：炮兵为什么攻击后变成步兵了？</strong><br>A：这是正常规则：炮兵开火后变为步兵并向前移动 2 格。</p>
+<p><strong>Q5：海盗港湾里单位为什么不能走海水？</strong><br>A：必须先到快艇生成点登船（出现⛵）；未登船的单位不能进入海水。</p>
+<p><strong>Q6：海炮和普通炮兵有什么区别？</strong><br>A：海炮只能在同行直射、自动选最近且路径无阻挡的目标，不受"目标已行动"限制；两者攻击后都会变为步兵。</p>
+<p><strong>Q7：雾夜里看不到鬼魂怎么办？</strong><br>A：雾夜鬼魂默认隐身，联机版不提供主动查看；只有撞鬼时那只鬼魂会显形到回合结束。墓碑降到 3 个及以下进入初晖后，鬼魂会一直可见。</p>
+<p><strong>Q8：凝魂怎么获得？</strong><br>A：撞鬼导致混乱、消灭鬼魂、消灭墓碑均可 +1；执灯士消灭鬼魂 +2。首次 2 点、之后每 3 点自动获得「执灯」技能卡。</p>
+<p><strong>Q9：城邦裂变什么时候触发？</strong><br>A：斯巴达与雅典第一次互相攻击（炮兵/海炮也计入，仅地雷除外）后，由攻击方选择是否发动；暂不发动会积累摩擦，摩擦达到 3 时自动发动。斯巴达发动时获得 1 辆精锐装甲车、雅典获得 2 个二阶步兵；雅典发动时获得 2 门海炮、斯巴达获得 2 个二阶步兵。</p>
+<p><strong>Q10：波斯远征军的单位消灭后有什么奖励？</strong><br>A：会在己方阵地生成对应的己方单位；每方最多 3 个，超出或阵地已满时改为技能点+1。</p>
+<p><strong>Q11：蠕潮蚀野的潮格能走吗？</strong><br>A：不能。潮眼与潮格都不可通行；想清理潮水，选中相邻单位使用「斩潮」，或预判下一轮潮涌位置提前用「引潮」改变扩张方向。</p>
+<p><strong>Q12：烽燧阵线的烽燧怎么占领？</strong><br>A：先把己方地面单位跨过长城（红方 x≥6，蓝方 x≤4），停在烽燧上下左右的相邻格，点击烽燧并花 1 指挥点点燃；点燃后还要在回合末结算时保持相邻，且相邻格没有敌方地面单位，才算控制。站在关门格可以争夺，但不能点燃。控制 3 座即获胜；1 座每回合 +1 技能点，2 座攻击 +1。</p>
+<p><strong>Q13：为什么单位过不了长城？</strong><br>A：第 5 列是城墙，只有 (5,1) 与 (5,3) 两座关门可通行，三座烽燧所在格永久阻挡。关门格可以站单位，不会挡住单位显示；但关门不算跨过长城，想点燃烽燧必须踏上敌方半场。绕行关门通常会暴露在对方火力下，这正是本模式的核心博弈。</p>
+<p><strong>Q14：霓虹纪元的协议怎么拿？</strong><br>A：核心每轮向周围 8 格喷出 2 个数据包。让地面单位走到包上拾取（车最多 2 个，其他单位 1 个），在<strong>己方回合开始时</strong>站到己方终端（红 0,2 / 蓝 10,2）即可自动上传，每个包 +1 协议。先到 5 点获胜。包里掉在地上不会自动得分；携带者死亡会把包留在原地；混乱单位可以捡包但不能上传；停电回合终端离线。</p>
+<p><strong>Q15：科技改装和公共事件会带到其他模式吗？</strong><br>A：不会。十类单位的改装被动与 6 种公共事件都只在霓虹纪元生效；技能卡、单位基础数值与其他模式规则不受影响。</p>
+
+<h2>十、调试模块</h2>
+<p>点击"🔧 调试模块"可打开调试面板，用于测试与演示：</p>
+<ul>
+<li>添加技能卡、部署任意单位、添加永久属性；</li>
+<li>单位操作：加/减混乱、移除单位、清除属性；</li>
+<li>雪原公共事件：手动触发 6 种事件；</li>
+<li>海盗公共事件：怒涛霜雪 / 巨炮铿轰 / 淬钢成艇 / 海怪来袭；</li>
+<li>雾夜幽乡：<strong>强制雾夜</strong> / <strong>强制初晖</strong> / <strong>恢复自动</strong>（无视回合和墓碑数量限制）；</li>
+<li>城邦裂变：手动发动事变、增加摩擦、为波斯远征军增援。</li>
+</ul>
+
+<h2>十一、快速参考</h2>
+<table><tbody>
+<tr><th>操作</th><th>消耗</th></tr>
+<tr><td>移动 1 次</td><td>1 指挥点</td></tr>
+<tr><td>攻击 1 次</td><td>1 指挥点</td></tr>
+<tr><td>后勤兵解混乱</td><td>1 指挥点</td></tr>
+<tr><td>使用技能卡</td><td>默认每回合 1 张</td></tr>
+<tr><td>购买技能卡</td><td>技能点（看卡面）</td></tr>
+</tbody></table>
+<table><tbody>
+<tr><th>格子颜色</th><th>含义</th></tr>
+<tr><td>🟡 黄色</td><td>可移动（鬼魂格也显示为黄色，实际进入会撞鬼）</td></tr>
+<tr><td>🔴 红色</td><td>可攻击</td></tr>
+<tr><td>🟢 绿色</td><td>可治疗（后勤兵）</td></tr>
+<tr><td>🔵 蓝色</td><td>当前选中的单位</td></tr>
+<tr><td>🟡 金色</td><td>技能卡选择目标</td></tr>
+</tbody></table>
+<p>祝你在《混乱与蠕动》中玩得愉快！</p>
+
+
+    </div>
+</div>
+</div>
+
+<div class="copyright-popup" id="copyrightPopup" role="dialog" aria-modal="true" aria-labelledby="copyrightTitle">
+    <div class="copyright-panel">
+        <button class="copyright-close" id="copyrightCloseBtn" type="button" aria-label="关闭">&times;</button>
+        <p class="copyright-kicker">Credits &amp; Copyright</p>
+        <h2 id="copyrightTitle">版权信息</h2>
+        <p class="copyright-sub">混乱与蠕动 · CHAOS &amp; WRITHE</p>
+        <div class="copyright-dev">
+            <img class="dev-icon" src="/client/local/qianjinsi-icon.jpg" alt="前进四 图标" width="54" height="54" decoding="async">
+            <div><small>开 发 者</small><strong>前进四</strong></div>
+        </div>
+        <div class="copyright-body">
+            <h3>版权声明</h3>
+            <p><strong>© 2026 前进四。保留所有权利。</strong></p>
+            <p>《混乱与蠕动》的名称、规则文本、技能卡文案、界面设计、棋子与地形美术及相关文档，除特别注明外，版权均归开发者 <strong>前进四</strong> 所有。</p>
+            <h3>使用范围</h3>
+            <p>本作以单机热座与本地/局域网联机形式提供给玩家游玩，不提供商业授权；未经书面许可，不得用于商业用途、二次分发或冒充原创发布。欢迎在保留出处与完整版权信息的前提下进行非商业的实况、直播与规则讨论。</p>
+            <h3>技术与第三方组件</h3>
+            <p>联机服务使用 Node.js（MIT）与 ws（MIT）；桌面版基于 Electron（MIT），其内置 Chromium 及附带组件遵循各自开源许可证。界面字体调用系统自带字体，不随本作再分发字体文件。</p>
+            <p class="copyright-meta"><span>应用版本 2.1.0</span><span>规则版本 v5.6</span><span>最后更新 2026-11-20</span></p>
+        </div>
+        <div class="copyright-foot"><span>© 2026 前进四 · 混乱与蠕动</span><button type="button" id="copyrightBackBtn">返回</button></div>
+    </div>
+</div>
+<div class="codex-popup" id="codexPopup" role="dialog" aria-modal="true" aria-labelledby="codexDialogTitle">
+    <div class="codex-panel">
+        <button class="codex-close" id="codexCloseBtn" type="button" aria-label="关闭图鉴">&times;</button>
+        <h2 id="codexDialogTitle" style="position:absolute;left:-9999px;top:0;">战地图鉴</h2>
+        <div id="codexRoot" data-mode="overlay"></div>
+    </div>
+</div>
+<div class="toast" id="toast" aria-live="polite"></div>
+<script src="/client/ui-shared.js"></script>
+<script src="/client/weather-fx.js"></script>
+<script src="/client/lobby-stars.js"></script>
+<script src="/client/music.js"></script>
+<script src="/client/sfx.js"></script>
+<script src="/client/codex-data.js"></script>
+<script src="/client/local/levels.js"></script>
+<script src="/client/local/app.js"></script>
+<script src="/client/codex.js"></script>
+</body>
+</html>

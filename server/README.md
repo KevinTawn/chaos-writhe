@@ -45,7 +45,7 @@ EXE / 浏览器
 
 ## 接口
 
-- `GET /health`：健康检查
+- `GET /health`：健康检查（只返回 `{ok:true}`，不含房间数 / 在线人数，运营数据只走 `/api/online`）
 - `GET /api/online`：在线人数快照（网站主页读取）
 - `GET /api/auth/config`：认证模式
 - `GET /api/auth/me`：当前身份（需要 Bearer/Cookie）

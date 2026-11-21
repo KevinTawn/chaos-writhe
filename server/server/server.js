@@ -25,6 +25,13 @@ const MODE_SET = new Set(MODES);
 const DEV_DEBUG = process.env.DEV_DEBUG === '1';
 const AUTH = createAuth(process.env);
 const API_CORS_ORIGIN = process.env.API_CORS_ORIGIN || '';
+const MAX_ROOMS = Math.max(1, Number(process.env.MAX_ROOMS) || 500); // 房间数上限，防止刷房耗尽内存
+
+// 调试指令（发牌 / 生成单位）属于测试后门，只允许在 AUTH_MODE=dev 下启用。
+// 生产认证模式下直接拒绝启动，避免误开后被任意玩家调用。
+if (DEV_DEBUG && !AUTH.devOpen) {
+  throw new Error('DEV_DEBUG 只能在 AUTH_MODE=dev 下启用：生产认证模式不允许开放测试指令');
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -137,7 +144,10 @@ const httpServer = http.createServer((req, res) => {
     handleApi(req, res, pathname).then((handled) => {
       if (handled === false) sendJson(res, 404, { detail: 'API 不存在' });
     }).catch((error) => {
-      if (!res.headersSent) sendJson(res, error.status || 500, { detail: error.message || '服务器错误' });
+      if (res.headersSent) return;
+      const status = error.status || 500;
+      // 4xx 是给调用方的可读提示；5xx 一律回通用文案，内部异常只进服务端日志
+      sendJson(res, status, { detail: status >= 500 ? '服务器错误' : (error.message || '请求无效') });
     });
     return;
   }
@@ -147,7 +157,8 @@ const httpServer = http.createServer((req, res) => {
   if (pathname === '/codex' || pathname === '/codex.html') return sendFile(res, path.join(CLIENT_DIR, 'codex.html'));
   if (pathname === '/copyright' || pathname === '/copyright.html') return sendFile(res, path.join(CLIENT_DIR, 'copyright.html'));
   if (pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
-  if (pathname === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true, rooms: rooms.size, online: ONLINE_STATS.get().online })); }
+  // 健康检查只回答存活；房间数 / 在线人数等运营数据只走 /api/online
+  if (pathname === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true })); }
 
   if (pathname.startsWith('/shared/')) {
     const target = path.resolve(SHARED_DIR, pathname.slice('/shared/'.length));
@@ -388,7 +399,8 @@ wss.on('connection', (ws, req) => {
     try { handleMessage(ws, msg); }
     catch (error) {
       console.error('[ws]', error.stack || error);
-      sendError(ws, '服务器处理失败：' + error.message);
+      // 内部异常只写服务端日志，回给客户端的是通用文案
+      sendError(ws, '服务器处理失败');
     }
   });
 
@@ -465,6 +477,7 @@ function handleMessage(ws, msg) {
   switch (msg.type) {
     case 'create_room': {
       detachFromRoom(ws);
+      if (rooms.size >= MAX_ROOMS) return sendError(ws, '服务器房间数已达上限，请稍后再试');
       const room = createRoom(msg.mode);
       bindPlayer(ws, room, 'red', room.players.red.token);
       return;

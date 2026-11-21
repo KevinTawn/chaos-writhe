@@ -28,7 +28,9 @@ function fromB64url(input) {
 function createAuth(env = process.env) {
   const mode = String(env.AUTH_MODE || (env.NODE_ENV === 'production' ? 'ticket' : 'dev')).toLowerCase();
   const devOpen = mode === 'dev' && env.AUTH_DEV_OPEN !== '0';
-  const ticketSecret = env.GAME_TICKET_SECRET || (devOpen ? 'dev-only-change-me' : '');
+  // 开发模式未配置密钥时用「进程内随机密钥」：仍是本进程签发的票才能通过，
+  // 但不再是写死在源码里的公开常量，避免被外部按已知值伪造 Ticket。
+  const ticketSecret = env.GAME_TICKET_SECRET || (devOpen ? crypto.randomBytes(32).toString('base64url') : '');
   const ticketTtlMs = Math.max(10, Number(env.GAME_TICKET_TTL_SECONDS) || 60) * 1000;
   const authCenter = String(env.AUTH_CENTER_URL || '').replace(/\/+$/, '');
   const introspectPath = env.AUTH_INTROSPECT_PATH || '/api/game/introspect';
